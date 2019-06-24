@@ -45,7 +45,6 @@ feetLocations = {xL1, xR1;
                  xL2, xR2;};            
              
 phase_length = 30;
-
      
 assert(length(desiredTimings) == size(activeFeet, 1));
 assert(size(activeFeet, 1) == size(feetLocations, 1));
@@ -111,18 +110,50 @@ end
 
 opti.subject_to(T >= 0.5 * ones(numberOfPhases,1))
 opti.subject_to(T <= 2 * ones(numberOfPhases,1))
+
 opti.set_initial(T, desiredTimings);
-opti.set_initial(X(3, :), linspace(initialPosition(3), finalPosition(3), N+1));
+opti.set_initial(X(1, 2:end), linspace(initialPosition(1), finalPosition(1), N));
+opti.set_initial(X(3, 2:end), linspace(initialPosition(3), finalPosition(3), N));
+opti.set_initial(X(:,1), [initialPosition; initialVelocity]);
+
+for phase = 1 : numberOfPhases
+    initialControl = desiredFinalControl;
+
+    range = (phase - 1) * phase_length + 1 : phase * phase_length;
+        
+    if (activeFeet(phase, 1) && activeFeet(phase, 2))
+        opti.set_initial(U(1:6,k), initialControl);
+    else
+        if activeFeet(phase, 1)
+            initialControl(3) = 2 * initialControl(3);
+            opti.set_initial(U(1:3,k), initialControl(4:6));
+            opti.set_initial(U(4:6,k), zeros(3,1));
+        else
+            if activeFeet(phase, 2)
+                initialControl(6) = 2 * initialControl(3);
+                opti.set_initial(U(1:3,k), zeros(3,1));
+                opti.set_initial(U(4:6,k), initialControl(4:6));
+            else
+                opti.set_initial(U(1:6,k), zeros(6,1));
+            end
+        end
+    end
+end
 
 opti.minimize((T - desiredTimings)' * (T - desiredTimings) ...
-    + 100 * (X(:,end) - [finalPosition; finalVelocity])' * (X(:,end) - [finalPosition; finalVelocity]) ...
+    + 100 * sumsqr(X(:,end - round(phase_length/3) : end) - [finalPosition; finalVelocity]) ...
     + 0.1/N * (sumsqr(U(3,:)) + sumsqr(U(6,:))) ...
     + 100/N * (sumsqr(U(1:2,:)) + sumsqr(U(4:5,:))) ...
     + 1/N * sumsqr(U(:,2:end) - U(:,1:end-1)) ...
     + 1 * ((U(:,end) - desiredFinalControl)' * (U(:,end) - desiredFinalControl)) ...
     + 1/N * torquesCost);
 
-opti.solver('ipopt');
+options = struct;
+options.expand = true;
+options.ipopt.print_level = 0;
+options.ipopt.linear_solver='ma27';
+    
+opti.solver('ipopt', options);
 
 sol = opti.solve();
 
