@@ -27,11 +27,25 @@ desiredFinalControl = [0.0;
                        0.0;
                        0.0;
                        9.81/(2*(finalPosition(3) - xR2(3)))];
+
+desiredLegLength = 1.18;
                    
 desiredTimings = [0.6; 1.2; 0.8; 1.2; 0.6]; 
 
-desiredLegLength = 1.18;
-
+phases = [true, true;
+         false, true;
+         true, true;
+         true, false;
+         true, true;];
+     
+feetLocations = {xL1, xR1;
+                 xL1, xR1;
+                 xL2, xR1;
+                 xL2, xR1;
+                 xL2, xR2;};                
+     
+assert(length(desiredTimings) == size(phases, 1));
+assert(size(phases,2) == 2);
 
 import casadi.*
 
@@ -51,50 +65,16 @@ y_copR = MX.sym('y_copR');
 ul = MX.sym('ul');
 ur = MX.sym('ur');
 
-rhs1 = [vx;
-    vy;
-    vz;
-    (px - xL1(1) - x_copL) * ul + (px - xR1(1) - x_copR) * ur;
-    (py - xL1(2) - y_copL) * ul + (py - xR1(2) - y_copR) * ur;
-    -9.81 + (pz - xL1(3)) * ul + (pz - xR1(3)) * ur];
-
-rhs2 = [vx;
-    vy;
-    vz;
-    (px - xR1(1) - x_copR) * ur;
-    (py - xR1(2) - y_copR) * ur;
-    -9.81 + (pz - xR1(3)) * ur];
-
-rhs3 = [vx;
-    vy;
-    vz;
-    (px - xL2(1) - x_copL) * ul + (px - xR1(1) - x_copR) * ur;
-    (py - xL2(2) - y_copL) * ul + (py - xR1(2) - y_copR) * ur;
-    -9.81 + (pz - xL2(3)) * ul + (pz - xR1(3)) * ur];
-
-rhs4 = [vx;
-    vy;
-    vz;
-    (px - xL2(1) - x_copL) * ul;
-    (py - xL2(2) - y_copL) * ul;
-    -9.81 + (pz - xL2(3)) * ul];
-
-rhs5 = [vx;
-    vy;
-    vz;
-    (px - xL2(1) - x_copL) * ul + (px - xR2(1) - x_copR) * ur;
-    (py - xL2(2) - y_copL) * ul + (py - xR2(2) - y_copR) * ur;
-    -9.81 + (pz - xL2(3)) * ul + (pz - xR2(3)) * ur];
-
 x = [px; py; pz; vx; vy; vz];
 u = [x_copL; y_copL; ul; x_copR; y_copR; ur];
 dtInt = MX.sym('dt');
 
-F1 = createDiscretizedFunction('F1', rhs1, x, u, dtInt);
-F2 = createDiscretizedFunction('F2', rhs2, x, u, dtInt);
-F3 = createDiscretizedFunction('F3', rhs3, x, u, dtInt);
-F4 = createDiscretizedFunction('F4', rhs4, x, u, dtInt);
-F5 = createDiscretizedFunction('F5', rhs5, x, u, dtInt);
+numberOfPhases = size(phases,1);
+for k = 1 : numberOfPhases
+   F{k} = getPhaseDependentDynamics(strcat('F',num2str(k)), phases(k,:), ...
+                                    feetLocations{k,1},feetLocations{k,2},...
+                                    x, u, dtInt);
+end
 
 pxFoot = MX.sym('pxf');
 pyFoot = MX.sym('pyf');
@@ -107,35 +87,9 @@ u = MX.sym('u_generic');
 foot_cop = [xCop; yCop];
 foot_control = [foot_cop;u];
 
-frictionBounds = [staticFriction^2;
-                  torsionalFriction;
-                  torsionalFriction];
-    
-torsional_multiplier = [(py - pyFoot)/(pz - pzFoot), ...
-                       -(px - pxFoot)/(pz - pzFoot)];
-              
-              
-friction_value = [((px - pxFoot - xCop)/(pz - pzFoot))^2 + ...
-                 ((py - pyFoot - yCop)/(pz - pzFoot))^2;
-                 torsional_multiplier * foot_cop;
-                 -torsional_multiplier * foot_cop];
-                 
-                 
-friction_function = Function('friction', {x, foot_cop, pFoot}, {friction_value});
-
-controlLimitsVector = [-copLimits(1,1);
-                        copLimits(1,2);
-                       -copLimits(2,1);
-                        copLimits(2,2)
-                        0];
-
-controlLimitValue = [-xCop;
-                      xCop;
-                     -yCop;
-                      yCop;
-                     -u];
-              
-controlBoundsfunction = Function('cop_bounds', {foot_control}, {controlLimitValue});
+[constraints, bounds] = getConstraints('constraints', pFoot, copLimits, ...
+                                       legLength, staticFriction, ...
+                                       torsionalFriction, x, foot_control);
 
 opti = casadi.Opti();
 
@@ -153,15 +107,10 @@ torquesCost = MX.zeros(1);
 
 for k=1:phase_length
   dt = T(1)/(N/5);
-  opti.subject_to(X(:,k+1)==F1(X(:,k),U(:,k), dt));
+  opti.subject_to(X(:,k+1)==F{1}(X(:,k),U(:,k), dt));
   
-  opti.subject_to((X(1:3,k+1) - xL1)' * (X(1:3,k+1) - xL1) <= legLength^2 );   
-  opti.subject_to(friction_function(X(:,k+1), U(1:2,k), xL1) <= frictionBounds);
-  opti.subject_to(controlBoundsfunction(U(1:3,k)) <= controlLimitsVector);
-    
-  opti.subject_to((X(1:3,k+1) - xR1)' * (X(1:3,k+1) - xR1) <= legLength^2 );  
-  opti.subject_to(friction_function(X(:,k+1), U(4:5,k), xR1) <= frictionBounds);
-  opti.subject_to(controlBoundsfunction(U(4:6,k)) <= controlLimitsVector);
+  opti.subject_to(constraints(X(:,k+1), U(1:3,k), xL1) <= bounds); 
+  opti.subject_to(constraints(X(:, k+1), U(4:6, k), xR1) <= bounds);
   
   torquesCost = torquesCost + ((X(3, k+1) - xL1(3) - desiredLegLength)*U(3,k))^2;
   torquesCost = torquesCost + ((X(3, k+1) - xR1(3) - desiredLegLength)*U(6,k))^2;
@@ -170,28 +119,20 @@ end
 
 for k=phase_length + 1 : 2 * phase_length
   dt = T(2)/(N/5);
-  opti.subject_to(X(:,k+1)==F2(X(:,k),U(:,k), dt));
+  opti.subject_to(X(:,k+1)==F{2}(X(:,k),U(:,k), dt));
   
   opti.subject_to(U(1:3,k) == zeros(3,1));
-  
-  opti.subject_to((X(1:3,k+1) - xR1)' * (X(1:3,k+1) - xR1) <= legLength^2 );
-  opti.subject_to(friction_function(X(:,k), U(4:5,k), xR1) <= frictionBounds);
-  opti.subject_to(controlBoundsfunction(U(4:6,k)) <= controlLimitsVector);
+  opti.subject_to(constraints(X(:, k+1), U(4:6, k), xR1) <= bounds);
   
   torquesCost = torquesCost + ((X(3, k+1) - xR1(3) - desiredLegLength)*U(6,k))^2;
 end
 
 for k= 2 * phase_length + 1 : 3 * phase_length
   dt = T(3)/(N/5);
-  opti.subject_to(X(:,k+1)==F3(X(:,k),U(:,k), dt));
+  opti.subject_to(X(:,k+1)==F{3}(X(:,k),U(:,k), dt));
   
-  opti.subject_to((X(1:3,k+1) - xL2)' * (X(1:3,k+1) - xL2) <= legLength^2 );  
-  opti.subject_to(friction_function(X(:,k), U(1:2,k), xL2) <= frictionBounds);
-  opti.subject_to(controlBoundsfunction(U(1:3,k)) <= controlLimitsVector);
-  
-  opti.subject_to((X(1:3,k+1) - xR1)' * (X(1:3,k+1) - xR1) <= legLength^2 );
-  opti.subject_to(friction_function(X(:,k), U(4:5,k), xR1) <= frictionBounds);
-  opti.subject_to(controlBoundsfunction(U(4:6,k)) <= controlLimitsVector);
+  opti.subject_to(constraints(X(:,k+1), U(1:3,k), xL2) <= bounds); 
+  opti.subject_to(constraints(X(:, k+1), U(4:6, k), xR1) <= bounds);
   
   torquesCost = torquesCost + ((X(3, k+1) - xL2(3) - desiredLegLength)*U(3,k))^2;
   torquesCost = torquesCost + ((X(3, k+1) - xR1(3) - desiredLegLength)*U(6,k))^2;
@@ -199,12 +140,9 @@ end
 
 for k= 3 * phase_length + 1 : 4 * phase_length
   dt = T(4)/(N/5);
-  opti.subject_to(X(:,k+1)==F4(X(:,k),U(:,k), dt));
+  opti.subject_to(X(:,k+1)==F{4}(X(:,k),U(:,k), dt));
   
-  opti.subject_to((X(1:3,k+1) - xL2)' * (X(1:3,k+1) - xL2) <= legLength^2 );
-  opti.subject_to(friction_function(X(:,k), U(1:2,k), xL2) <= frictionBounds);
-  opti.subject_to(controlBoundsfunction(U(1:3,k)) <= controlLimitsVector);
-  
+  opti.subject_to(constraints(X(:,k+1), U(1:3,k), xL2) <= bounds);  
   opti.subject_to(U(4:6,k) == zeros(3,1));
   
   torquesCost = torquesCost + ((X(3, k+1) - xL2(3) - desiredLegLength)*U(3,k))^2;  
@@ -212,15 +150,10 @@ end
 
 for k= 4 * phase_length + 1 : 5 * phase_length
   dt = T(5)/(N/5);
-  opti.subject_to(X(:,k+1)==F5(X(:,k),U(:,k), dt));
+  opti.subject_to(X(:,k+1)==F{5}(X(:,k),U(:,k), dt));
 
-  opti.subject_to((X(1:3,k+1) - xL2)' * (X(1:3,k+1) - xL2) <= legLength^2 );
-  opti.subject_to(friction_function(X(:,k), U(1:2,k), xL2) <= frictionBounds);
-  opti.subject_to(controlBoundsfunction(U(1:3,k)) <= controlLimitsVector);
-  
-  opti.subject_to((X(1:3,k+1) - xR2)' * (X(1:3,k+1) - xR2) <= legLength^2 );
-  opti.subject_to(friction_function(X(:,k), U(4:5,k), xR2) <= frictionBounds);
-  opti.subject_to(controlBoundsfunction(U(4:6,k)) <= controlLimitsVector);
+  opti.subject_to(constraints(X(:,k+1), U(1:3,k), xL2) <= bounds); 
+  opti.subject_to(constraints(X(:, k+1), U(4:6, k), xR2) <= bounds);
   
   torquesCost = torquesCost + ((X(3, k+1) - xL2(3) - desiredLegLength)*U(3,k))^2;
   torquesCost = torquesCost + ((X(3, k+1) - xR2(3) - desiredLegLength)*U(6,k))^2;
