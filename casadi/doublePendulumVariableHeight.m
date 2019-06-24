@@ -32,135 +32,85 @@ desiredLegLength = 1.18;
                    
 desiredTimings = [0.6; 1.2; 0.8; 1.2; 0.6]; 
 
-phases = [true, true;
-         false, true;
-         true, true;
-         true, false;
-         true, true;];
+activeFeet = [true, true;
+              false, true;
+              true, true;
+              true, false;
+              true, true;];
      
 feetLocations = {xL1, xR1;
                  xL1, xR1;
                  xL2, xR1;
                  xL2, xR1;
-                 xL2, xR2;};                
+                 xL2, xR2;};            
+             
+phase_length = 30;
+
      
-assert(length(desiredTimings) == size(phases, 1));
-assert(size(phases,2) == 2);
+assert(length(desiredTimings) == size(activeFeet, 1));
+assert(size(activeFeet, 1) == size(feetLocations, 1));
+assert(size(activeFeet,2) == 2);
+assert(size(feetLocations,2) == 2);
 
 import casadi.*
 
-px = MX.sym('px');
-py = MX.sym('py');
-pz = MX.sym('pz');
-
-vx = MX.sym('vx');
-vy = MX.sym('vy');
-vz = MX.sym('vz');
-
-x_copL = MX.sym('x_copL');
-y_copL = MX.sym('y_copL');
-x_copR = MX.sym('x_copR');
-y_copR = MX.sym('y_copR');
-
-ul = MX.sym('ul');
-ur = MX.sym('ur');
-
-x = [px; py; pz; vx; vy; vz];
-u = [x_copL; y_copL; ul; x_copR; y_copR; ur];
+x = MX.sym('x', 6);
+u = MX.sym('u', 6);
 dtInt = MX.sym('dt');
-
-numberOfPhases = size(phases,1);
-for k = 1 : numberOfPhases
-   F{k} = getPhaseDependentDynamics(strcat('F',num2str(k)), phases(k,:), ...
-                                    feetLocations{k,1},feetLocations{k,2},...
-                                    x, u, dtInt);
-end
-
-pxFoot = MX.sym('pxf');
-pyFoot = MX.sym('pyf');
-pzFoot = MX.sym('pzf');
-pFoot = [pxFoot; pyFoot; pzFoot];
-
-xCop = MX.sym('x_cop');
-yCop = MX.sym('y_cop');
-u = MX.sym('u_generic');
-foot_cop = [xCop; yCop];
-foot_control = [foot_cop;u];
+pFoot = MX.sym('pFoot', 3);
+foot_control = MX.sym('foot_control', 3);
 
 [constraints, bounds] = getConstraints('constraints', pFoot, copLimits, ...
                                        legLength, staticFriction, ...
                                        torsionalFriction, x, foot_control);
 
+numberOfPhases = size(activeFeet,1);
+
+for k = 1 : numberOfPhases
+   F{k} = getPhaseDependentDynamics(strcat('F',num2str(k)), activeFeet(k,:), ...
+                                    feetLocations{k,1},feetLocations{k,2},...
+                                    x, u, dtInt);
+end
+
 opti = casadi.Opti();
 
-phase_length = 30;
-N = 5 * phase_length;
+N = numberOfPhases * phase_length;
 
 X = opti.variable(6, N + 1);
 U = opti.variable(6, N);
 
-T = opti.variable(5);
+T = opti.variable(numberOfPhases);
 
 opti.subject_to(X(:,1) == [initialPosition; initialVelocity]);
 
 torquesCost = MX.zeros(1);
 
-for k=1:phase_length
-  dt = T(1)/(N/5);
-  opti.subject_to(X(:,k+1)==F{1}(X(:,k),U(:,k), dt));
-  
-  opti.subject_to(constraints(X(:,k+1), U(1:3,k), xL1) <= bounds); 
-  opti.subject_to(constraints(X(:, k+1), U(4:6, k), xR1) <= bounds);
-  
-  torquesCost = torquesCost + ((X(3, k+1) - xL1(3) - desiredLegLength)*U(3,k))^2;
-  torquesCost = torquesCost + ((X(3, k+1) - xR1(3) - desiredLegLength)*U(6,k))^2;
+for phase = 1 : numberOfPhases
+    
+    dt = T(phase)/phase_length;
 
+    for k = (phase - 1) * phase_length + 1 : phase * phase_length
+        opti.subject_to(X(:,k+1)==F{phase}(X(:,k),U(:,k), dt));
+        
+        if (activeFeet(phase, 1))
+            opti.subject_to(constraints(X(:,k+1), U(1:3,k), feetLocations{phase,1}) <= bounds);
+            torquesCost = torquesCost + ((X(3, k+1) - feetLocations{phase,1}(3) - desiredLegLength)*U(3,k))^2;
+        else
+            opti.subject_to(U(1:3,k) == zeros(3,1));
+        end
+        
+        if (activeFeet(phase, 2))
+            opti.subject_to(constraints(X(:,k+1), U(4:6,k), feetLocations{phase,2}) <= bounds);
+            torquesCost = torquesCost + ((X(3, k+1) - feetLocations{phase,2}(3) - desiredLegLength)*U(6,k))^2;
+        else
+            opti.subject_to(U(4:6,k) == zeros(3,1));
+        end        
+    end
+    
 end
 
-for k=phase_length + 1 : 2 * phase_length
-  dt = T(2)/(N/5);
-  opti.subject_to(X(:,k+1)==F{2}(X(:,k),U(:,k), dt));
-  
-  opti.subject_to(U(1:3,k) == zeros(3,1));
-  opti.subject_to(constraints(X(:, k+1), U(4:6, k), xR1) <= bounds);
-  
-  torquesCost = torquesCost + ((X(3, k+1) - xR1(3) - desiredLegLength)*U(6,k))^2;
-end
-
-for k= 2 * phase_length + 1 : 3 * phase_length
-  dt = T(3)/(N/5);
-  opti.subject_to(X(:,k+1)==F{3}(X(:,k),U(:,k), dt));
-  
-  opti.subject_to(constraints(X(:,k+1), U(1:3,k), xL2) <= bounds); 
-  opti.subject_to(constraints(X(:, k+1), U(4:6, k), xR1) <= bounds);
-  
-  torquesCost = torquesCost + ((X(3, k+1) - xL2(3) - desiredLegLength)*U(3,k))^2;
-  torquesCost = torquesCost + ((X(3, k+1) - xR1(3) - desiredLegLength)*U(6,k))^2;
-end
-
-for k= 3 * phase_length + 1 : 4 * phase_length
-  dt = T(4)/(N/5);
-  opti.subject_to(X(:,k+1)==F{4}(X(:,k),U(:,k), dt));
-  
-  opti.subject_to(constraints(X(:,k+1), U(1:3,k), xL2) <= bounds);  
-  opti.subject_to(U(4:6,k) == zeros(3,1));
-  
-  torquesCost = torquesCost + ((X(3, k+1) - xL2(3) - desiredLegLength)*U(3,k))^2;  
-end
-
-for k= 4 * phase_length + 1 : 5 * phase_length
-  dt = T(5)/(N/5);
-  opti.subject_to(X(:,k+1)==F{5}(X(:,k),U(:,k), dt));
-
-  opti.subject_to(constraints(X(:,k+1), U(1:3,k), xL2) <= bounds); 
-  opti.subject_to(constraints(X(:, k+1), U(4:6, k), xR2) <= bounds);
-  
-  torquesCost = torquesCost + ((X(3, k+1) - xL2(3) - desiredLegLength)*U(3,k))^2;
-  torquesCost = torquesCost + ((X(3, k+1) - xR2(3) - desiredLegLength)*U(6,k))^2;
-end
-
-opti.subject_to(T >= 0.5 * ones(5,1))
-opti.subject_to(T <= 2 * ones(5,1))
+opti.subject_to(T >= 0.5 * ones(numberOfPhases,1))
+opti.subject_to(T <= 2 * ones(numberOfPhases,1))
 opti.set_initial(T, desiredTimings);
 opti.set_initial(X(3, :), linspace(initialPosition(3), finalPosition(3), N+1));
 
