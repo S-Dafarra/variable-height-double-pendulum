@@ -1,7 +1,4 @@
-function plotOptiSolutionForDoublePendulum(optiSolution, X, U, T, phase_length)
-xsol = optiSolution.value(X);
-usol = optiSolution.value(U);
-t_sol = optiSolution.value(T);
+function plotOptiSolutionForDoublePendulum(xsol, usol, t_sol, phase_length)
 
 time = linspace(0.0, t_sol(1), phase_length+1);
 time = [time, linspace(time(end) + t_sol(2)/phase_length, time(end) + t_sol(2), phase_length)];
