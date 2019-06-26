@@ -7,30 +7,28 @@ xL2 = [0.6; 0.15; 0.4];
 xR2 = [0.6; -0.15; 0.4];
 
 
-initialPosition = [0.0; 0.0; 1.16];
-initialVelocity = [0.0; 0.0; 0.0];
+initialState.position = [0.0; 0.0; 1.16];
+initialState.velocity = [0.0; 0.0; 0.0];
 
-finalPosition = [0.6; 0.0; 1.56];
-finalVelocity = [0.0; 0.0; 0.0];
+references.state.position = [0.6; 0.0; 1.56];
+references.state.velocity = [0.0; 0.0; 0.0];
 
-copLimits = [-0.05, 0.05;
-             -0.05, 0.05];
+constraints.cop = [-0.05, 0.05;
+                   -0.05, 0.05];
+constraints.legLength = 1.20;
+constraints.staticFriction = 0.5;
+constraints.torsionalFriction = 0.03;
 
-legLength = 1.20;
+references.control = [0.0;
+                      0.0;
+                      9.81/(2*(references.state.position(3) - xL2(3)));
+                      0.0;
+                      0.0;
+                      9.81/(2*(references.state.position(3) - xR2(3)))];
 
-staticFriction = 0.5;
-torsionalFriction = 0.03;
-
-desiredFinalControl = [0.0;
-                       0.0;
-                       9.81/(2*(finalPosition(3) - xL2(3)));
-                       0.0;
-                       0.0;
-                       9.81/(2*(finalPosition(3) - xR2(3)))];
-
-desiredLegLength = 1.18;
+references.legLength = 1.18;
                    
-desiredTimings = [0.6; 1.2; 0.8; 1.2; 0.6]; 
+references.timings = [0.6; 1.2; 0.8; 1.2; 0.6]; 
 
 activeFeet = [true, true;
               false, true;
@@ -46,19 +44,22 @@ feetLocations = {xL1, xR1;
              
 phase_length = 30;
 
-[xsol, usol, t_sol] = solveVariableHeightDoublePendulum(initialPosition, ...
-                                                        initialVelocity,...
-                                                        finalPosition, ...
-                                                        finalVelocity, ...
-                                                        copLimits, ...
-                                                        legLength, ...
-                                                        staticFriction, ...
-                                                        torsionalFriction, ...
-                                                        desiredFinalControl, ...
-                                                        desiredLegLength, ...
-                                                        desiredTimings, ...
+N = phase_length * size(activeFeet, 1);
+
+weights.time = 1;
+weights.finalState = 10;
+weights.u = 0.1/N;
+weights.cop = 10/N;
+weights.controlVariation = 1/N;
+weights.finalControl = 1;
+weights.torques = 1/N;
+
+[xsol, usol, t_sol] = solveVariableHeightDoublePendulum(initialState,...
+                                                        references, ...
+                                                        constraints, ...
                                                         activeFeet, ...
                                                         feetLocations, ...
-                                                        phase_length);
+                                                        phase_length, ...
+                                                        weights);
 
 plotOptiSolutionForDoublePendulum(xsol, usol, t_sol, phase_length);
