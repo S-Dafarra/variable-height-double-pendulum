@@ -12,13 +12,11 @@ assert(size(activeFeet, 1) == size(feetLocations, 1));
 assert(size(activeFeet,2) == 2);
 assert(size(feetLocations,2) == 2);
 
-import casadi.*
-
-x = MX.sym('x', 6);
-u = MX.sym('u', 6);
-dtInt = MX.sym('dt');
-pFoot = MX.sym('pFoot', 3);
-foot_control = MX.sym('foot_control', 3);
+x = casadi.MX.sym('x', 6);
+u = casadi.MX.sym('u', 6);
+dtInt = casadi.MX.sym('dt');
+pFoot = casadi.MX.sym('pFoot', 3);
+foot_control = casadi.MX.sym('foot_control', 3);
 
 [constraintsFcn, bounds] = getConstraints('constraints', pFoot, constraints.cop, ...
                                        constraints.legLength, constraints.staticFriction, ...
@@ -43,7 +41,7 @@ T = opti.variable(numberOfPhases);
 
 opti.subject_to(X(:,1) == [initialState.position; initialState.velocity]);
 
-torquesCost = MX.zeros(1);
+torquesCost = casadi.MX.zeros(1);
 
 for phase = 1 : numberOfPhases
     

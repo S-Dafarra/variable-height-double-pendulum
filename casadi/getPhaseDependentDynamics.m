@@ -1,7 +1,5 @@
 function F = getPhaseDependentDynamics(phaseName, leftRightActivated, ...
                                        leftLocation, rightLocation, X, U, dT)
-import casadi.*
-
 px = X(1);
 py = X(2);
 pz = X(3);
@@ -21,6 +19,7 @@ rhs = [vx;
        0.0;
        0.0;
        -9.81];
+   
 if (leftRightActivated(1))
   rhs = rhs + [0.0;
                0.0;

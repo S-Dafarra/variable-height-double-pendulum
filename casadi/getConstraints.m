@@ -3,8 +3,6 @@ function [G, upperBounds] = getConstraints(name, footLocation, ...
                                            staticFriction, torsionalFriction, ...
                                            state, footControl) 
                                        
-import casadi.*
-
 px = state(1);
 py = state(2);
 pz = state(3);
@@ -47,7 +45,7 @@ leg_length_value = (state(1:3) - footLocation)' * (state(1:3) - footLocation);
                  
 constraints = [friction_value; controlLimitValue; leg_length_value];
               
-G = Function(name, {state, footControl, footLocation}, {constraints});
+G = casadi.Function(name, {state, footControl, footLocation}, {constraints});
 
 upperBounds = [frictionBounds;
                controlLimitsVector;
