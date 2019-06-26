@@ -1,10 +1,10 @@
-function plotOptiSolutionForDoublePendulum(xsol, usol, t_sol, phase_length)
-
-time = linspace(0.0, t_sol(1), phase_length+1);
-time = [time, linspace(time(end) + t_sol(2)/phase_length, time(end) + t_sol(2), phase_length)];
-time = [time, linspace(time(end) + t_sol(3)/phase_length, time(end) + t_sol(3), phase_length)];
-time = [time, linspace(time(end) + t_sol(4)/phase_length, time(end) + t_sol(4), phase_length)];
-time = [time, linspace(time(end) + t_sol(5)/phase_length, time(end) + t_sol(5), phase_length)];
+function plotOptiSolutionForDoublePendulum(xsol, usol, t_sol)
+time = 0.0;
+numberOfPhases = length(t_sol);
+phase_length = size(usol,2)/numberOfPhases;
+for i = 1 : numberOfPhases
+    time = [time, linspace(time(end) + t_sol(i)/phase_length, time(end) + t_sol(i), phase_length)];
+end
 
 figure
 ax = axes;

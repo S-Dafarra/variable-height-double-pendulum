@@ -9,11 +9,11 @@ xL2 = [0.6; 0.15; 0.4];
 xR2 = [0.6; -0.15; 0.4];
 
 
-initialState.position = [0.0; 0.0; 1.16];
-initialState.velocity = [0.0; 0.0; 0.0];
+initialState.position = [0.0; -0.08; 1.16];
+initialState.velocity = [0.1; -0.05; 0.0];
 
-references.state.position = [0.6; 0.0; 1.56];
-references.state.velocity = [0.0; 0.0; 0.0];
+references.state.position = [0.6; 0.08; 1.56];
+references.state.velocity = [0.1; 0.05; 0.0];
 references.state.anticipation = 0.3;
 
 constraints.cop = [-0.05, 0.05;
@@ -24,30 +24,26 @@ constraints.torsionalFriction = 0.03;
 
 references.control = [0.0;
                       0.0;
-                      9.81/(2*(references.state.position(3) - xL2(3)));
+                      9.81/(references.state.position(3) - xL2(3));
                       0.0;
                       0.0;
-                      9.81/(2*(references.state.position(3) - xR2(3)))];
+                      0.0];
 
 references.legLength = 1.18;
                    
-references.timings = [0.6; 1.2; 0.8; 1.2; 0.6]; 
+references.timings = [0.6; 1.2; 0.8;]; 
 
-activeFeet = [true, true;
-              false, true;
+activeFeet = [false, true;
               true, true;
-              true, false;
-              true, true;];
+              true, false;];
           
 if (jump)
-    activeFeet(3,:) = [false, false];              
+    activeFeet(2,:) = [false, false];              
 end
     
 feetLocations = {xL1, xR1;
-                 xL1, xR1;
                  xL2, xR1;
-                 xL2, xR1;
-                 xL2, xR2;};            
+                 xL2, xR1;};            
              
 phase_length = 30;
 

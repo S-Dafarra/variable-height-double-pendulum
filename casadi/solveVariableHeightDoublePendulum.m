@@ -20,7 +20,7 @@ dtInt = MX.sym('dt');
 pFoot = MX.sym('pFoot', 3);
 foot_control = MX.sym('foot_control', 3);
 
-[constraints, bounds] = getConstraints('constraints', pFoot, constraints.cop, ...
+[constraintsFcn, bounds] = getConstraints('constraints', pFoot, constraints.cop, ...
                                        constraints.legLength, constraints.staticFriction, ...
                                        constraints.torsionalFriction, x, foot_control);
 
@@ -53,14 +53,14 @@ for phase = 1 : numberOfPhases
         opti.subject_to(X(:,k+1)==F{phase}(X(:,k),U(:,k), dt));
         
         if (activeFeet(phase, 1))
-            opti.subject_to(constraints(X(:,k+1), U(1:3,k), feetLocations{phase,1}) <= bounds);
+            opti.subject_to(constraintsFcn(X(:,k+1), U(1:3,k), feetLocations{phase,1}) <= bounds);
             torquesCost = torquesCost + ((X(3, k+1) - feetLocations{phase,1}(3) - references.legLength)*U(3,k))^2;
         else
             opti.subject_to(U(1:3,k) == zeros(3,1));
         end
         
         if (activeFeet(phase, 2))
-            opti.subject_to(constraints(X(:,k+1), U(4:6,k), feetLocations{phase,2}) <= bounds);
+            opti.subject_to(constraintsFcn(X(:,k+1), U(4:6,k), feetLocations{phase,2}) <= bounds);
             torquesCost = torquesCost + ((X(3, k+1) - feetLocations{phase,2}(3) - references.legLength)*U(6,k))^2;
         else
             opti.subject_to(U(4:6,k) == zeros(3,1));
@@ -69,8 +69,8 @@ for phase = 1 : numberOfPhases
     
 end
 
-opti.subject_to(T >= 0.5 * ones(numberOfPhases,1))
-opti.subject_to(T <= 2 * ones(numberOfPhases,1))
+opti.subject_to(T >= constraints.minimumTimings);
+opti.subject_to(T <= constraints.maximumTimings);
 
 opti.set_initial(T, references.timings);
 opti.set_initial(X(1, 2:end), linspace(initialState.position(1), references.state.position(1), N));
@@ -79,8 +79,6 @@ opti.set_initial(X(:,1), [initialState.position; initialState.velocity]);
 
 for phase = 1 : numberOfPhases
     controlGuess = references.control;
-
-    range = (phase - 1) * phase_length + 1 : phase * phase_length;
         
     if (activeFeet(phase, 1) && activeFeet(phase, 2))
         opti.set_initial(U(1:6,k), controlGuess);
@@ -102,7 +100,7 @@ for phase = 1 : numberOfPhases
 end
 
 opti.minimize(weights.time * (T - references.timings)' * (T - references.timings) ...
-    + weights.finalState * sumsqr(X(:,end - round(phase_length/3) : end) - [references.state.position; references.state.velocity]) ...
+    + weights.finalState * sumsqr(X(:,end - round(phase_length * references.state.anticipation) : end) - [references.state.position; references.state.velocity]) ...
     + weights.u * (sumsqr(U(3,:)) + sumsqr(U(6,:))) ...
     + weights.cop * (sumsqr(U(1:2,:)) + sumsqr(U(4:5,:))) ...
     + weights.controlVariation * sumsqr(U(:,2:end) - U(:,1:end-1)) ...
