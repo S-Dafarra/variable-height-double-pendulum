@@ -1,6 +1,8 @@
 close all 
 clear all
 
+jump = false;
+
 xL1 = [0.0; 0.15; 0.0];
 xR1 = [0.0; -0.15; 0.0];
 xL2 = [0.6; 0.15; 0.4];
@@ -35,7 +37,11 @@ activeFeet = [true, true;
               true, true;
               true, false;
               true, true;];
-     
+          
+if (jump)
+    activeFeet(3,:) = [false, false];              
+end
+    
 feetLocations = {xL1, xR1;
                  xL1, xR1;
                  xL2, xR1;
