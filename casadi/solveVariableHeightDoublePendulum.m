@@ -75,28 +75,6 @@ opti.set_initial(X(1, 2:end), linspace(initialState.position(1), references.stat
 opti.set_initial(X(3, 2:end), linspace(initialState.position(3), references.state.position(3), N));
 opti.set_initial(X(:,1), [initialState.position; initialState.velocity]);
 
-for phase = 1 : numberOfPhases
-    controlGuess = references.control;
-        
-    if (activeFeet(phase, 1) && activeFeet(phase, 2))
-        opti.set_initial(U(1:6,k), controlGuess);
-    else
-        if activeFeet(phase, 1)
-            controlGuess(3) = 2 * controlGuess(3);
-            opti.set_initial(U(1:3,k), controlGuess(4:6));
-            opti.set_initial(U(4:6,k), zeros(3,1));
-        else
-            if activeFeet(phase, 2)
-                controlGuess(6) = 2 * controlGuess(3);
-                opti.set_initial(U(1:3,k), zeros(3,1));
-                opti.set_initial(U(4:6,k), controlGuess(4:6));
-            else
-                opti.set_initial(U(1:6,k), zeros(6,1));
-            end
-        end
-    end
-end
-
 opti.minimize(weights.time * (T - references.timings)' * (T - references.timings) ...
     + weights.finalState * sumsqr(X(:,end - round(phase_length * references.state.anticipation) : end) - [references.state.position; references.state.velocity]) ...
     + weights.u * (sumsqr(U(3,:)) + sumsqr(U(6,:))) ...

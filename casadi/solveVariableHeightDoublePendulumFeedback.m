@@ -106,25 +106,6 @@ opti.set_initial(X(3, 2:end), position_guess(3,:));
 opti.set_initial(X(:,1), [initialState.position; initialState.velocity]);
 
 for phase = 1 : numberOfPhases
-    controlGuess = references.control;
-        
-    if (activeFeet(phase, 1) && activeFeet(phase, 2))
-        opti.set_initial(U(1:6,k), controlGuess);
-    else
-        if activeFeet(phase, 1)
-            controlGuess(3) = 2 * controlGuess(3);
-            opti.set_initial(U(1:3,k), controlGuess(4:6));
-            opti.set_initial(U(4:6,k), zeros(3,1));
-        else
-            if activeFeet(phase, 2)
-                controlGuess(6) = 2 * controlGuess(3);
-                opti.set_initial(U(1:3,k), zeros(3,1));
-                opti.set_initial(U(4:6,k), controlGuess(4:6));
-            else
-                opti.set_initial(U(1:6,k), zeros(6,1));
-            end
-        end
-    end
     if (phase ~= numberOfPhases)
         meanPosition = mean(position_guess(1:3,(phase-1) * phase_length + 1 : phase * phase_length), 2);
         opti.set_initial(x_des(1:3, phase),meanPosition);
