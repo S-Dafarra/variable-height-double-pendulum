@@ -1,2 +1,4 @@
 
 *.m~
+*/build
+*.user
