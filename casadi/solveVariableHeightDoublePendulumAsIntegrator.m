@@ -98,6 +98,7 @@ options = struct;
 options.expand = true;
 options.ipopt.print_level = 0;
 options.ipopt.linear_solver='ma27';
+options.ipopt.mu_strategy= 'adaptive';
     
 opti.solver('ipopt', options);
 

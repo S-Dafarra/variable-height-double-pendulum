@@ -3,30 +3,25 @@ function [G, upperBounds] = getConstraints(name, footLocation, ...
                                            staticFriction, torsionalFriction, ...
                                            state, footControl) 
                                        
-px = state(1);
-py = state(2);
-pz = state(3);
-pxFoot = footLocation(1);
-pyFoot = footLocation(2);
-pzFoot = footLocation(3);
+currentPosition = state(1:3);
 
 xCop = footControl(1);
 yCop = footControl(2);
 u = footControl(3);
-foot_cop = [xCop; yCop];
+foot_cop = [xCop; yCop; 0];
 
-frictionBounds = [staticFriction^2;
-                  torsionalFriction;
-                  torsionalFriction];
-    
-torsional_multiplier = [(py - pyFoot)/(pz - pzFoot), ...
-                       -(px - pxFoot)/(pz - pzFoot)];
+forceDividedByMassAndU = (currentPosition - (footLocation + foot_cop)); %Being the mass and u positive quantities, while the upperbound is 0, they don't play a role
+
+frictionBounds = [0;
+                  0;
+                  0];
               
-              
-friction_value = [((px - pxFoot - xCop)/(pz - pzFoot))^2 + ...
-                 ((py - pyFoot - yCop)/(pz - pzFoot))^2;
-                 torsional_multiplier * foot_cop;
-                 -torsional_multiplier * foot_cop];
+A = [-yCop xCop 0];
+B = [0 0 torsionalFriction];
+          
+friction_value = [[1 1 -(staticFriction^2)] * (forceDividedByMassAndU).^2;
+                  (A-B) * forceDividedByMassAndU;
+                  (-A-B) * forceDividedByMassAndU];
                  
                  
 controlLimitsVector = [-copLimits(1,1);

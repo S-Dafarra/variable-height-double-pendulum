@@ -20,7 +20,7 @@ constraints.cop = [-0.05, 0.05;
                    -0.05, 0.05];
 constraints.legLength = 1.20;
 constraints.staticFriction = 0.5;
-constraints.torsionalFriction = 0.03;
+constraints.torsionalFriction = 0.1;
 
 references.control = [0.0;
                       0.0;
