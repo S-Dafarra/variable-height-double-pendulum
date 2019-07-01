@@ -8,7 +8,7 @@ StepUpPlanner::Phase::Phase(PhaseType phase)
       , m_phase(phase)
 { }
 
-StepUpPlanner::Phase::Phase(StepUpPlanner::Step *left, StepUpPlanner::Step *right)
+StepUpPlanner::Phase::Phase(const Step *left, const Step *right)
 {
     if (left && right) {
         m_phase = StepUpPlanner::PhaseType::DOUBLE_SUPPORT;
@@ -65,12 +65,22 @@ StepUpPlanner::PhaseType StepUpPlanner::Phase::getPhase() const
     return m_phase;
 }
 
-StepUpPlanner::Step &StepUpPlanner::Phase::leftStep()
+casadi::MX &StepUpPlanner::Phase::leftPosition()
+{
+    return m_steps.left.position();
+}
+
+casadi::MX &StepUpPlanner::Phase::rightPosition()
+{
+    return m_steps.right.position();
+}
+
+const StepUpPlanner::Step &StepUpPlanner::Phase::getLeftStep() const
 {
     return m_steps.left;
 }
 
-StepUpPlanner::Step &StepUpPlanner::Phase::rightStep()
+const StepUpPlanner::Step &StepUpPlanner::Phase::getRightStep() const
 {
     return m_steps.right;
 }

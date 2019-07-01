@@ -27,7 +27,11 @@ public:
 
     casadi::MX& cop();
 
+    casadi::MX cop() const;
+
     casadi::MX& multiplier();
+
+    casadi::MX multiplier() const;
 };
 
 class StepUpPlanner::Control {
@@ -50,7 +54,9 @@ public:
 
     casadi::MX &controlVector();
 
-    StepUpPlanner::SideDependentObject<StepUpPlanner::FootControl> &controls();
+    StepUpPlanner::FootControl &leftControl();
+
+    StepUpPlanner::FootControl &rightControl();
 
 };
 

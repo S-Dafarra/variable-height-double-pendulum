@@ -23,7 +23,8 @@ public:
     Phase(StepUpPlanner::PhaseType phase);
 
     //Use null pointer in case the corresponding foot is not on the ground
-    Phase(StepUpPlanner::Step *left, StepUpPlanner::Step *right);
+    //Object are copied
+    Phase(const StepUpPlanner::Step *left, const StepUpPlanner::Step *right);
 
     ~Phase();
 
@@ -37,9 +38,14 @@ public:
 
     casadi::MX& duration();
 
-    StepUpPlanner::Step& leftStep();
+    //Returning only the position. In this way, it should not be possible to change the vertices (thus the number of constraints), once the solver object is created
+    casadi::MX& leftPosition();
 
-    StepUpPlanner::Step& rightStep();
+    casadi::MX& rightPosition();
+
+    const StepUpPlanner::Step& getLeftStep() const;
+
+    const StepUpPlanner::Step& getRightStep() const;
 
 };
 

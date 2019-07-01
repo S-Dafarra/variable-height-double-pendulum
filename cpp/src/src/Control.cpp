@@ -29,7 +29,17 @@ casadi::MX &StepUpPlanner::FootControl::cop()
     return m_CoP;
 }
 
+casadi::MX StepUpPlanner::FootControl::cop() const
+{
+    return m_CoP;
+}
+
 casadi::MX &StepUpPlanner::FootControl::multiplier()
+{
+    return m_multiplier;
+}
+
+casadi::MX StepUpPlanner::FootControl::multiplier() const
 {
     return m_multiplier;
 }
@@ -69,7 +79,13 @@ casadi::MX &StepUpPlanner::Control::controlVector()
     return m_stacked;
 }
 
-StepUpPlanner::SideDependentObject<StepUpPlanner::FootControl> &StepUpPlanner::Control::controls()
+StepUpPlanner::FootControl &StepUpPlanner::Control::leftControl()
 {
-    return m_controls;
+    return m_controls.left;
 }
+
+StepUpPlanner::FootControl &StepUpPlanner::Control::rightControl()
+{
+    return m_controls.right;
+}
+

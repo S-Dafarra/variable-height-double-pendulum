@@ -5,9 +5,7 @@ StepUpPlanner::Settings::Settings()
     : m_maximumLegLength(1.5)
       , m_staticFrictionCoefficient(0.5)
       , m_torsionalFrictionCoefficient(0.03)
-{
-
-}
+{ }
 
 StepUpPlanner::Settings::~Settings()
 { }
@@ -68,7 +66,3 @@ StepUpPlanner::CostWeights &StepUpPlanner::Settings::costWeights()
     return m_costWeights;
 }
 
-StepUpPlanner::References &StepUpPlanner::Settings::references()
-{
-    return m_references;
-}

@@ -2,7 +2,6 @@
 #define STEPUPPLANNER_SETTINGS_H
 
 #include <StepUpPlanner/CostWeights.h>
-#include <StepUpPlanner/References.h>
 
 namespace StepUpPlanner {
     class Settings;
@@ -15,7 +14,6 @@ class StepUpPlanner::Settings {
     double m_torsionalFrictionCoefficient;
 
     StepUpPlanner::CostWeights m_costWeights;
-    StepUpPlanner::References m_references;
 
 public:
 
@@ -36,8 +34,6 @@ public:
     double getTorsionalFrictionCoefficient() const;
 
     StepUpPlanner::CostWeights& costWeights();
-
-    StepUpPlanner::References& references();
 
 };
 

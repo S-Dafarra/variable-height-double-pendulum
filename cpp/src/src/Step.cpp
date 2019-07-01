@@ -120,12 +120,12 @@ casadi::MX &StepUpPlanner::Step::position()
     return m_position;
 }
 
-const casadi::MX &StepUpPlanner::Step::getCoPBounds() const
+casadi::MX StepUpPlanner::Step::getCoPBounds() const
 {
     return m_copBounds;
 }
 
-casadi::Function &StepUpPlanner::Step::getCoPConstraintsFunction()
+casadi::Function StepUpPlanner::Step::getCoPConstraintsFunction() const
 {
     return m_copConstraints;
 }

@@ -47,9 +47,9 @@ public:
 
     casadi::MX &position();
 
-    const casadi::MX &getCoPBounds() const;
+    casadi::MX getCoPBounds() const;
 
-    casadi::Function &getCoPConstraintsFunction();
+    casadi::Function getCoPConstraintsFunction() const;
 
 };
 
