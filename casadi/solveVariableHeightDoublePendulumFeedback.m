@@ -17,12 +17,10 @@ x = casadi.MX.sym('x', 6);
 u = casadi.MX.sym('u', 6);
 a = casadi.MX.sym('a', 3);
 dtInt = casadi.MX.sym('dt');
-pFoot = casadi.MX.sym('pFoot', 3);
-foot_control = casadi.MX.sym('foot_control', 3);
 
-[footConstraints, bounds] = getConstraints('constraints', pFoot, constraints.cop, ...
+[footConstraints, bounds] = getConstraints('constraints', constraints.cop, ...
                                            constraints.legLength, constraints.staticFriction, ...
-                                           constraints.torsionalFriction, x, foot_control);
+                                           constraints.torsionalFriction);
 numberOfPhases = size(activeFeet,1);
 
 for k = 1 : numberOfPhases

@@ -1,8 +1,10 @@
-function [G, upperBounds] = getConstraints(name, footLocation, ...
-                                           copLimits, legLength, ...
-                                           staticFriction, torsionalFriction, ...
-                                           state, footControl) 
-                                       
+function [G, upperBounds] = getConstraints(name, copLimits, legLength, ...
+                                           staticFriction, torsionalFriction) 
+
+footLocation = casadi.MX.sym('pFoot', 3);
+footControl = casadi.MX.sym('foot_control', 3);
+state = casadi.MX.sym('state', 6);
+
 currentPosition = state(1:3);
 
 xCop = footControl(1);
@@ -36,7 +38,7 @@ controlLimitValue = [-xCop;
                       yCop;
                      -u];
                  
-leg_length_value = (state(1:3) - footLocation)' * (state(1:3) - footLocation);
+leg_length_value = (currentPosition - footLocation)' * (currentPosition - footLocation);
                  
 constraints = [friction_value; controlLimitValue; leg_length_value];
               

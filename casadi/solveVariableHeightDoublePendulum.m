@@ -15,12 +15,10 @@ assert(size(feetLocations,2) == 2);
 x = casadi.MX.sym('x', 6);
 u = casadi.MX.sym('u', 6);
 dtInt = casadi.MX.sym('dt');
-pFoot = casadi.MX.sym('pFoot', 3);
-foot_control = casadi.MX.sym('foot_control', 3);
 
-[constraintsFcn, bounds] = getConstraints('constraints', pFoot, constraints.cop, ...
-                                       constraints.legLength, constraints.staticFriction, ...
-                                       constraints.torsionalFriction, x, foot_control);
+[constraintsFcn, bounds] = getConstraints('constraints', constraints.cop, ...
+                                           constraints.legLength, constraints.staticFriction, ...
+                                           constraints.torsionalFriction);
 
 numberOfPhases = size(activeFeet,1);
 
