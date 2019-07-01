@@ -29,13 +29,17 @@ public:
 
     void operator=(const References& other);
 
-    void setDesiredState(const StepUpPlanner::State& state);
-
-    void setDesiredControl(const StepUpPlanner::Control& control);
-
     bool setFinalStateAnticipation(double finalStateAnticipation); //The percentage of the last phase in which the error from the desired state is considered
 
+    double getFinalStateAnticipation();
+
     bool setDesiredLegLength(double desiredLegLength);
+
+    double getDesiredLength();
+
+    StepUpPlanner::State &desiredState();
+
+    StepUpPlanner::Control &dediredControl();
 
 };
 

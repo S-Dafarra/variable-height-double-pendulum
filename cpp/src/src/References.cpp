@@ -28,16 +28,6 @@ void StepUpPlanner::References::operator=(const StepUpPlanner::References &other
     m_desiredLegLength = other.m_desiredLegLength;
 }
 
-void StepUpPlanner::References::setDesiredState(const StepUpPlanner::State &state)
-{
-    m_desiredState = state;
-}
-
-void StepUpPlanner::References::setDesiredControl(const StepUpPlanner::Control &control)
-{
-    m_desiredControl = control;
-}
-
 bool StepUpPlanner::References::setFinalStateAnticipation(double finalStateAnticipation)
 {
     if ((finalStateAnticipation > 1.0) || (finalStateAnticipation < 0.0))
@@ -51,6 +41,11 @@ bool StepUpPlanner::References::setFinalStateAnticipation(double finalStateAntic
     return true;
 }
 
+double StepUpPlanner::References::getFinalStateAnticipation()
+{
+    return m_finalStateAnticipation;
+}
+
 bool StepUpPlanner::References::setDesiredLegLength(double desiredLegLength)
 {
     if (desiredLegLength < 0.0) {
@@ -61,6 +56,21 @@ bool StepUpPlanner::References::setDesiredLegLength(double desiredLegLength)
     m_desiredLegLength = desiredLegLength;
 
     return true;
+}
+
+double StepUpPlanner::References::getDesiredLength()
+{
+    return m_desiredLegLength;
+}
+
+StepUpPlanner::State &StepUpPlanner::References::desiredState()
+{
+    return m_desiredState;
+}
+
+StepUpPlanner::Control &StepUpPlanner::References::dediredControl()
+{
+    return m_desiredControl;
 }
 
 

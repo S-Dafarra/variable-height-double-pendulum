@@ -2,6 +2,8 @@
 #define STEPUPPLANNER_PHASE_H
 
 #include <casadi/casadi.hpp>
+#include <StepUpPlanner/SideDependentObject.h>
+#include <StepUpPlanner/Step.h>
 #include <StepUpPlanner/PhaseType.h>
 
 namespace StepUpPlanner {
@@ -13,12 +15,15 @@ class StepUpPlanner::Phase {
     casadi::MX m_duration;
     double m_minDuration, m_maxDuration, m_desiredDuration;
 
-    casadi::MX m_leftPosition, m_rightPosition;
+    StepUpPlanner::SideDependentObject<StepUpPlanner::Step> m_steps;
     StepUpPlanner::PhaseType m_phase;
 
 public:
 
     Phase(StepUpPlanner::PhaseType phase);
+
+    //Use null pointer in case the corresponding foot is not on the ground
+    Phase(StepUpPlanner::Step *left, StepUpPlanner::Step *right);
 
     ~Phase();
 
@@ -30,11 +35,11 @@ public:
 
     StepUpPlanner::PhaseType getPhase() const;
 
-    casadi::MX& getDuration();
+    casadi::MX& duration();
 
-    casadi::MX& getLeftPosition();
+    StepUpPlanner::Step& leftStep();
 
-    casadi::MX& getRightPosition();
+    StepUpPlanner::Step& rightStep();
 
 };
 

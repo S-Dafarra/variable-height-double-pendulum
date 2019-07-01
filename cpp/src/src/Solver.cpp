@@ -17,7 +17,13 @@ StepUpPlanner::Phase &StepUpPlanner::Solver::getPhase(size_t i)
     return m_phases[i];
 }
 
-bool StepUpPlanner::Solver::solve()
+void StepUpPlanner::Solver::specifySettings(const Settings &settings)
+{
+    m_settings = settings;
+}
+
+bool StepUpPlanner::Solver::solve(const StepUpPlanner::State &state)
 {
     return false;
 }
+

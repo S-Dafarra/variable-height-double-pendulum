@@ -5,10 +5,26 @@ StepUpPlanner::Phase::Phase(PhaseType phase)
     : m_minDuration(0.5)
       , m_maxDuration(2.0)
       , m_desiredDuration(1.0)
-      , m_leftPosition(3)
-      , m_rightPosition(3)
       , m_phase(phase)
 { }
+
+StepUpPlanner::Phase::Phase(StepUpPlanner::Step *left, StepUpPlanner::Step *right)
+{
+    if (left && right) {
+        m_phase = StepUpPlanner::PhaseType::DOUBLE_SUPPORT;
+        m_steps.left = *left;
+        m_steps.right = *right;
+    } else if (left) {
+        m_phase = StepUpPlanner::PhaseType::SINGLE_SUPPORT_LEFT;
+        m_steps.left = *left;
+    } else if (right) {
+        m_phase = StepUpPlanner::PhaseType::SINGLE_SUPPORT_RIGHT;
+        m_steps.right = *right;
+    } else {
+        m_phase = StepUpPlanner::PhaseType::FLYING;
+    }
+
+}
 
 StepUpPlanner::Phase::~Phase()
 {
@@ -36,16 +52,12 @@ bool StepUpPlanner::Phase::setDurationSettings(double minimumDuration, double ma
 
 void StepUpPlanner::Phase::setDesiredLeftPosition(double px, double py, double pz)
 {
-    m_leftPosition(0) = px;
-    m_leftPosition(1) = py;
-    m_leftPosition(2) = pz;
+    m_steps.left.setPosition(px, py, pz);
 }
 
 void StepUpPlanner::Phase::setDesiredRightPosition(double px, double py, double pz)
 {
-    m_rightPosition(0) = px;
-    m_rightPosition(1) = py;
-    m_rightPosition(2) = pz;
+    m_steps.right.setPosition(px, py, pz);
 }
 
 StepUpPlanner::PhaseType StepUpPlanner::Phase::getPhase() const
@@ -53,17 +65,17 @@ StepUpPlanner::PhaseType StepUpPlanner::Phase::getPhase() const
     return m_phase;
 }
 
-casadi::MX &StepUpPlanner::Phase::getLeftPosition()
+StepUpPlanner::Step &StepUpPlanner::Phase::leftStep()
 {
-    return m_leftPosition;
+    return m_steps.left;
 }
 
-casadi::MX &StepUpPlanner::Phase::getRightPosition()
+StepUpPlanner::Step &StepUpPlanner::Phase::rightStep()
 {
-    return m_rightPosition;
+    return m_steps.right;
 }
 
-casadi::MX &StepUpPlanner::Phase::getDuration()
+casadi::MX &StepUpPlanner::Phase::duration()
 {
     return m_duration;
 }

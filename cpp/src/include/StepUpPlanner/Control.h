@@ -2,17 +2,37 @@
 #define STEPUPPLANNER_CONTROL_H
 
 #include <casadi/casadi.hpp>
+#include <StepUpPlanner/SideDependentObject.h>
 
 namespace StepUpPlanner {
+    class FootControl;
     class Control;
 }
 
+class StepUpPlanner::FootControl {
+    casadi::MX m_multiplier;
+    casadi::MX m_CoP;
+
+public:
+
+    FootControl();
+
+    FootControl(const FootControl& other);
+
+    FootControl(FootControl&& other);
+
+    ~FootControl();
+
+    void operator=(const FootControl& other);
+
+    casadi::MX& cop();
+
+    casadi::MX& multiplier();
+};
+
 class StepUpPlanner::Control {
 
-    casadi::MX m_leftMultiplier;
-    casadi::MX m_leftCoP;
-    casadi::MX m_rightMultiplier;
-    casadi::MX m_rightCoP;
+    StepUpPlanner::SideDependentObject<StepUpPlanner::FootControl> m_controls;
 
     casadi::MX m_stacked;
 
@@ -28,15 +48,9 @@ public:
 
     void operator=(const Control& other);
 
-    casadi::MX &getControl();
+    casadi::MX &controlVector();
 
-    casadi::MX &getLeftMultiplier();
-
-    casadi::MX &getLeftCoP();
-
-    casadi::MX &getRightMultiplier();
-
-    casadi::MX &getRightCoP();
+    StepUpPlanner::SideDependentObject<StepUpPlanner::FootControl> &controls();
 
 };
 

@@ -1,12 +1,45 @@
 #include <StepUpPlanner/Control.h>
 
-StepUpPlanner::Control::Control()
-    : m_leftMultiplier(1)
-      , m_leftCoP(2)
-      , m_rightMultiplier(1)
-      , m_rightCoP(2)
+StepUpPlanner::FootControl::FootControl()
+    : m_multiplier(1)
+      , m_CoP(2)
+{ }
+
+StepUpPlanner::FootControl::FootControl(const StepUpPlanner::FootControl &other)
 {
-    m_stacked = casadi::MX::vertcat({m_leftMultiplier, m_leftCoP, m_rightMultiplier, m_rightCoP});
+    operator=(other);
+}
+
+StepUpPlanner::FootControl::FootControl(StepUpPlanner::FootControl &&other)
+{
+    operator=(other);
+}
+
+StepUpPlanner::FootControl::~FootControl()
+{ }
+
+void StepUpPlanner::FootControl::operator=(const StepUpPlanner::FootControl &other)
+{
+    m_multiplier = other.m_multiplier;
+    m_CoP = other.m_CoP;
+}
+
+casadi::MX &StepUpPlanner::FootControl::cop()
+{
+    return m_CoP;
+}
+
+casadi::MX &StepUpPlanner::FootControl::multiplier()
+{
+    return m_multiplier;
+}
+
+StepUpPlanner::Control::Control()
+{
+    m_stacked = casadi::MX::vertcat({m_controls.left.multiplier(),
+                                     m_controls.left.cop(),
+                                     m_controls.right.multiplier(),
+                                     m_controls.right.cop()});
 }
 
 StepUpPlanner::Control::Control(const StepUpPlanner::Control &other)
@@ -24,35 +57,19 @@ StepUpPlanner::Control::~Control()
 
 void StepUpPlanner::Control::operator=(const StepUpPlanner::Control &other)
 {
-    m_leftMultiplier = other.m_leftMultiplier;
-    m_leftCoP = other.m_leftCoP;
-    m_rightMultiplier = other.m_rightMultiplier;
-    m_rightCoP = other.m_rightCoP;
+    m_controls = other.m_controls;
 
-    m_stacked = casadi::MX::vertcat({m_leftMultiplier, m_leftCoP, m_rightMultiplier, m_rightCoP});
-}
+    m_stacked = casadi::MX::vertcat({m_controls.left.multiplier(),
+                                     m_controls.left.cop(),
+                                     m_controls.right.multiplier(),
+                                     m_controls.right.cop()});}
 
-casadi::MX &StepUpPlanner::Control::getControl()
+casadi::MX &StepUpPlanner::Control::controlVector()
 {
     return m_stacked;
 }
 
-casadi::MX &StepUpPlanner::Control::getLeftMultiplier()
+StepUpPlanner::SideDependentObject<StepUpPlanner::FootControl> &StepUpPlanner::Control::controls()
 {
-    return m_leftMultiplier;
-}
-
-casadi::MX &StepUpPlanner::Control::getLeftCoP()
-{
-    return m_leftCoP;
-}
-
-casadi::MX &StepUpPlanner::Control::getRightMultiplier()
-{
-    return m_rightMultiplier;
-}
-
-casadi::MX &StepUpPlanner::Control::getRightCoP()
-{
-    return m_rightCoP;
+    return m_controls;
 }

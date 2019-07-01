@@ -3,25 +3,28 @@ set(LIBRARY_TARGET_NAME ${PROJECT_NAME})
 
 # List of CPP (source) library files.
 set(${LIBRARY_TARGET_NAME}_SRC
-        src/Solver.cpp
-        src/Phase.cpp
-        src/State.cpp
         src/Control.cpp
-        src/References.cpp
         src/CostWeights.cpp
+        src/Phase.cpp
+        src/References.cpp
         src/Settings.cpp
+        src/Solver.cpp
+        src/State.cpp
+        src/Step.cpp
 )
 
 # List of HPP (header) library files.
 set(${LIBRARY_TARGET_NAME}_HDR
-        include/StepUpPlanner/Solver.h
+        include/StepUpPlanner/Control.h
+        include/StepUpPlanner/CostWeights.h
         include/StepUpPlanner/Phase.h
         include/StepUpPlanner/PhaseType.h
-        include/StepUpPlanner/State.h
-        include/StepUpPlanner/Control.h
         include/StepUpPlanner/References.h
-        include/StepUpPlanner/CostWeights.h
         include/StepUpPlanner/Settings.h
+        include/StepUpPlanner/SideDependentObject.h
+        include/StepUpPlanner/Solver.h
+        include/StepUpPlanner/State.h
+        include/StepUpPlanner/Step.h
 )
 
 add_library(${LIBRARY_TARGET_NAME} ${${LIBRARY_TARGET_NAME}_SRC} ${${LIBRARY_TARGET_NAME}_HDR})

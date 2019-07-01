@@ -31,11 +31,11 @@ public:
 
     void setVelocity(double vx, double vy, double vz);
 
-    casadi::MX& getPosition();
+    casadi::MX& position();
 
-    casadi::MX& getVelocity();
+    casadi::MX& velocity();
 
-    casadi::MX& getState();
+    casadi::MX& stateVector();
 };
 
 #endif // STEPUPPLANNER_STATE_H
