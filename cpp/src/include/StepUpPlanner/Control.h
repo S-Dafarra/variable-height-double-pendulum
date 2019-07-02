@@ -40,13 +40,13 @@ public:
 
     ~Control();
 
-    StepUpPlanner::FootControl &leftControl();
+    StepUpPlanner::FootControl &left();
 
-    const StepUpPlanner::FootControl &leftControl() const;
+    const StepUpPlanner::FootControl &left() const;
 
-    StepUpPlanner::FootControl &rightControl();
+    StepUpPlanner::FootControl &right();
 
-    const StepUpPlanner::FootControl &rightControl() const;
+    const StepUpPlanner::FootControl &right() const;
 
 
 };

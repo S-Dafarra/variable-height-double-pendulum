@@ -160,8 +160,10 @@ bool StepUpPlanner::Solver::fillPhaseDataVector(std::vector<StepUpPlanner::Phase
     return true;
 }
 
-void StepUpPlanner::Solver::setupProblem()
+void StepUpPlanner::Solver::setupOpti()
 {
+    using Sl = casadi::Slice;
+
     casadi_int numberOfPhases = static_cast<casadi_int>(m_phases.size());
     casadi_int phaseLength = static_cast<casadi_int>(m_settings.phaseLength());
     casadi_int N = numberOfPhases * phaseLength;
@@ -171,7 +173,7 @@ void StepUpPlanner::Solver::setupProblem()
     m_U = m_opti.variable(6, N);
     m_T = m_opti.variable(numberOfPhases);
 
-    casadi::MX currentState = m_X(casadi::Slice(), 0);
+    casadi::MX currentState = m_X(Sl(), 0);
     m_opti.subject_to(currentState == m_initialStateParameter);
 
     casadi::MX previousState = currentState;
@@ -199,12 +201,12 @@ void StepUpPlanner::Solver::setupProblem()
 
 
         for (casadi_int k = 0; k < phaseLength; ++k) {
-            currentState = m_X(casadi::Slice(), k + 1);
-            currentControl = m_U(casadi::Slice(), k);
-            currentAcceleration = m_A(casadi::Slice(), k);
+            currentState = m_X(Sl(), k + 1);
+            currentControl = m_U(Sl(), k);
+            currentAcceleration = m_A(Sl(), k);
 
-            leftControl = currentControl(casadi::Slice(0,2));
-            rightControl = currentControl(casadi::Slice(3,5));
+            leftControl = currentControl(Sl(0,2));
+            rightControl = currentControl(Sl(3,5));
             m_opti.subject_to(currentState == casadi::MX::vertcat(m_integratorDynamics({previousState, currentAcceleration, dT})));
 
             if (leftIsActive) {
@@ -231,12 +233,41 @@ void StepUpPlanner::Solver::setupProblem()
     }
 
     StepUpPlanner::CostWeights w = m_settings.costWeights();
-    casadi::Slice lastStates(static_cast<casadi_int>(N - std::round(phaseLength * m_settings.getFinalStateAnticipation())), N);
+    Sl lastStates(static_cast<casadi_int>(N - std::round(phaseLength * m_settings.getFinalStateAnticipation())), N);
 
     casadi::MX costFunction = w.durationsDifference * casadi::MX::sumsqr(m_T - m_referenceTimings); //Timing error
-    costFunction += w.finalStateError * casadi::MX::sumsqr(m_X(casadi::Slice(), lastStates) - m_referenceStateParameter); //Final state error
+    costFunction += w.finalStateError * casadi::MX::sumsqr(m_X(Sl(), lastStates) - m_referenceStateParameter); //Final state error
+    costFunction += w.multipliers * (casadi::MX::sumsqr(m_U(2, Sl())) + casadi::MX::sumsqr(m_U(5, Sl())));
+    costFunction += w.cop * (casadi::MX::sumsqr(m_U(Sl(0,1), Sl())) + casadi::MX::sumsqr(m_U(Sl(3,4), Sl())));
+    costFunction += w.controlVariations * (casadi::MX::sumsqr(m_U(Sl(), Sl(1, N-1)) - m_U(Sl(), Sl(0, N-2))));
+    costFunction += w.finalControl * casadi::MX::sumsqr(m_U(Sl(), N-1) - m_referenceControlParameter);
+    costFunction += w.torques * torquesCost;
 
     m_opti.minimize(costFunction);
+}
+
+bool StepUpPlanner::Solver::setupProblem(const std::vector<StepUpPlanner::Phase> &phases, const StepUpPlanner::Settings &settings)
+{
+    m_settings = settings;
+
+    m_initialStateParameter = m_opti.parameter(6);
+    m_desiredLegLengthParameter = m_opti.parameter();
+    m_referenceStateParameter = m_opti.parameter(6);
+    m_referenceControlParameter = m_opti.parameter(6);
+    m_integratorDynamics = getIntegratorDynamics();
+
+    bool ok = fillPhaseDataVector(phases);
+
+    if (!ok) {
+        std::cerr << "[StepUpPlanner::Solver::setupProblem] Problem when specifying the phases." <<std::endl;
+        return false;
+    }
+
+    setupOpti();
+
+    m_solverState = SolverState::PROBLEM_SET;
+
+    return true;
 }
 
 void StepUpPlanner::Solver::setParametersValue(const StepUpPlanner::State &initialState, const References &references)
@@ -245,7 +276,10 @@ void StepUpPlanner::Solver::setParametersValue(const StepUpPlanner::State &initi
     m_opti.set_value(m_desiredLegLengthParameter, references.getDesiredLength());
     m_opti.set_value(m_referenceStateParameter(casadi::Slice(0,2)), references.desiredState().position());
     m_opti.set_value(m_referenceStateParameter(casadi::Slice(3,5)), references.desiredState().velocity());
-
+    m_opti.set_value(m_referenceControlParameter(casadi::Slice(0,1)), references.desiredControl().left().cop());
+    m_opti.set_value(m_referenceControlParameter(2), references.desiredControl().left().multiplier());
+    m_opti.set_value(m_referenceControlParameter(casadi::Slice(3,4)), references.desiredControl().right().cop());
+    m_opti.set_value(m_referenceControlParameter(5), references.desiredControl().right().multiplier());
 
     for (size_t i = 0; i < m_phases.size(); ++i) {
         m_opti.set_value(m_phases[i].feetLocationParameter.left, m_phases[i].phase.leftPosition());
@@ -256,34 +290,44 @@ void StepUpPlanner::Solver::setParametersValue(const StepUpPlanner::State &initi
     }
 }
 
-StepUpPlanner::Solver::Solver(const std::vector<StepUpPlanner::Phase> &phases, const StepUpPlanner::Settings &settings)
-      : m_settings(settings)
-{
-    m_initialStateParameter = m_opti.parameter(6);
-    m_desiredLegLengthParameter = m_opti.parameter();
-    m_referenceStateParameter = m_opti.parameter(6);
-    m_integratorDynamics = getIntegratorDynamics();
+StepUpPlanner::Solver::Solver()
+    : m_solverState(SolverState::NOT_INITIALIZED)
+{ }
 
-    bool ok = fillPhaseDataVector(phases);
-    assert(ok);
-    setupProblem();
+StepUpPlanner::Solver::Solver(const std::vector<StepUpPlanner::Phase> &phases, const StepUpPlanner::Settings &settings)
+    : m_solverState(SolverState::NOT_INITIALIZED)
+{
+    setupProblem(phases, settings);
 }
 
 StepUpPlanner::Solver::~Solver()
 { }
 
+bool StepUpPlanner::Solver::resetProblem(const std::vector<StepUpPlanner::Phase> &phases, const StepUpPlanner::Settings &settings)
+{
+    clear();
+    return setupProblem(phases, settings);
+}
+
 StepUpPlanner::Phase &StepUpPlanner::Solver::getPhase(size_t i)
 {
     assert(i < m_phases.size() && "[ERROR][StepUpPlanner::Solver::getPhase] Index out of bounds.");
+    assert(m_solverState == SolverState::PROBLEM_SET && "[ERROR][StepUpPlanner::Solver::getPhase] First you have to set the problem.");
     return m_phases[i].phase;
 }
 
 bool StepUpPlanner::Solver::solve(const StepUpPlanner::State &initialState, const References &references)
 {
     setParametersValue(initialState, references);
-
-    m_solution = std::make_unique<casadi::OptiSol>(m_opti.solve());
+    casadi::OptiSol solution = m_opti.solve();
 
     return true;
+}
+
+void StepUpPlanner::Solver::clear()
+{
+    m_solverState = SolverState::NOT_INITIALIZED;
+    m_opti = casadi::Opti();
+    m_phases.clear();
 }
 

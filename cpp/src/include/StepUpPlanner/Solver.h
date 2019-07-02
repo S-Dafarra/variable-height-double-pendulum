@@ -29,18 +29,26 @@ class StepUpPlanner::Solver {
         casadi::MX minDurationParameter, maxDurationParameter;
     };
 
+    enum class SolverState {
+        NOT_INITIALIZED,
+        PROBLEM_SET,
+        PROBLEM_SOLVED
+    };
+
+    SolverState m_solverState;
+
     std::vector<PhaseData> m_phases;
 
     StepUpPlanner::Settings m_settings;
 
     casadi::Function m_integratorDynamics;
 
-    casadi::MX m_initialStateParameter, m_desiredLegLengthParameter, m_referenceTimings, m_referenceStateParameter;
+    casadi::MX m_initialStateParameter, m_desiredLegLengthParameter;
+    casadi::MX m_referenceTimings, m_referenceStateParameter, m_referenceControlParameter;
 
     casadi::MX m_X, m_U, m_A, m_T;
 
     casadi::Opti m_opti;
-    std::unique_ptr<casadi::OptiSol> m_solution;
 
     casadi::Function getIntegratorDynamics();
 
@@ -51,7 +59,9 @@ class StepUpPlanner::Solver {
 
     bool fillPhaseDataVector(std::vector<StepUpPlanner::Phase> phases);
 
-    void setupProblem();
+    void setupOpti();
+
+    bool setupProblem(const std::vector<StepUpPlanner::Phase>& phases, const StepUpPlanner::Settings& settings);
 
     void setParametersValue(const StepUpPlanner::State &initialState, const References &references);
 
@@ -59,7 +69,7 @@ class StepUpPlanner::Solver {
 
 public:
 
-    Solver() = delete;
+    Solver();
 
     Solver(const std::vector<StepUpPlanner::Phase>& phases, const StepUpPlanner::Settings& settings);
 
@@ -69,9 +79,13 @@ public:
 
     ~Solver();
 
+    bool resetProblem(const std::vector<StepUpPlanner::Phase>& phases, const StepUpPlanner::Settings& settings);
+
     StepUpPlanner::Phase& getPhase(size_t i);
 
     bool solve(const StepUpPlanner::State& initialState, const StepUpPlanner::References& references);
+
+    void clear();
 };
 
 #endif // STEPUPPLANNER_SOLVER_H

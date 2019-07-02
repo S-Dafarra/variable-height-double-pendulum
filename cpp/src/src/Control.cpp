@@ -36,22 +36,22 @@ StepUpPlanner::Control::Control()
 StepUpPlanner::Control::~Control()
 { }
 
-StepUpPlanner::FootControl &StepUpPlanner::Control::leftControl()
+StepUpPlanner::FootControl &StepUpPlanner::Control::left()
 {
     return m_controls.left;
 }
 
-const StepUpPlanner::FootControl &StepUpPlanner::Control::leftControl() const
+const StepUpPlanner::FootControl &StepUpPlanner::Control::left() const
 {
     return m_controls.left;
 }
 
-StepUpPlanner::FootControl &StepUpPlanner::Control::rightControl()
+StepUpPlanner::FootControl &StepUpPlanner::Control::right()
 {
     return m_controls.right;
 }
 
-const StepUpPlanner::FootControl &StepUpPlanner::Control::rightControl() const
+const StepUpPlanner::FootControl &StepUpPlanner::Control::right() const
 {
     return m_controls.right;
 }

@@ -30,7 +30,9 @@ public:
 
     const StepUpPlanner::State &desiredState() const;
 
-    StepUpPlanner::Control &dediredControl();
+    StepUpPlanner::Control &desiredControl();
+
+    const StepUpPlanner::Control &desiredControl() const;
 
 };
 

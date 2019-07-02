@@ -36,9 +36,12 @@ const StepUpPlanner::State &StepUpPlanner::References::desiredState() const
     return m_desiredState;
 }
 
-StepUpPlanner::Control &StepUpPlanner::References::dediredControl()
+StepUpPlanner::Control &StepUpPlanner::References::desiredControl()
 {
     return m_desiredControl;
 }
 
-
+const StepUpPlanner::Control &StepUpPlanner::References::desiredControl() const
+{
+    return m_desiredControl;
+}
