@@ -263,6 +263,9 @@ bool StepUpPlanner::Solver::setupProblem(const std::vector<StepUpPlanner::Phase>
         return false;
     }
 
+    casadi_int npoints = static_cast<casadi_int>(m_phases.size() * settings.phaseLength());
+    m_linSpacedPoints = casadi::DM::linspace(0, 1, npoints + 1);
+
     setupOpti();
 
     casadi::Dict casadiOptions;
@@ -310,10 +313,13 @@ void StepUpPlanner::Solver::setParametersValue(const StepUpPlanner::State &initi
 
 StepUpPlanner::Solver::Solver()
     : m_solverState(SolverState::NOT_INITIALIZED)
+      , m_solution(nullptr)
 { }
 
 StepUpPlanner::Solver::Solver(const std::vector<StepUpPlanner::Phase> &phases, const StepUpPlanner::Settings &settings)
     : m_solverState(SolverState::NOT_INITIALIZED)
+      , m_solution(nullptr)
+
 {
     setupProblem(phases, settings);
 }
@@ -342,17 +348,37 @@ bool StepUpPlanner::Solver::solve(const StepUpPlanner::State &initialState, cons
     }
 
     if (m_solverState == SolverState::PROBLEM_SOLVED) {
-        //WARM START goes here
+        assert(m_solution);
+        m_opti.set_initial(m_solution->value_variables());
+        m_opti.set_initial(m_opti.lam_g(), m_solution->value(m_opti.lam_g()));
     } else {
-        //Generic initialization goes here
+        //Generic initialization
+        for (size_t i = 0; i < m_phases.size(); ++i) {
+            m_opti.set_initial(m_T(i), m_phases[i].phase.desiredDuration());
+        }
+
+        casadi_int npoints = static_cast<casadi_int>(m_phases.size() * m_settings.phaseLength());
+
+        const casadi::DM& initPos = initialState.position();
+        const casadi::DM& initVel = initialState.velocity();
+        const casadi::DM& refPos = references.desiredState().position();
+
+        m_opti.set_initial(m_X(casadi::Slice(), 0), casadi::DM::vertcat({initPos, initVel}));
+        casadi::DM interpolatedPosition(3);
+
+        for (casadi_int k = 1; k < npoints + 1; ++k) {
+            interpolatedPosition = initPos + m_linSpacedPoints(k) * (refPos - initPos);
+            m_opti.set_initial(m_X(casadi::Slice(0, 2), k), interpolatedPosition); //this should depend on the direction of motion
+        }
     }
 
     m_solverState = SolverState::PROBLEM_SET;
+    m_solution = nullptr;
 
     setParametersValue(initialState, references);
-    std::unique_ptr<casadi::OptiSol> solution = nullptr;
+
     try {
-        solution = std::make_unique<casadi::OptiSol>(m_opti.solve());
+        m_solution = std::make_unique<casadi::OptiSol>(m_opti.solve());
     } catch (std::exception &e) {
         std::cerr << "[StepUpPlanner::Solver::solve] Error while solving the optimization problem." << std::endl;
         std::cerr << "Details: " << e.what() << std::endl;
@@ -369,6 +395,7 @@ void StepUpPlanner::Solver::clear()
 {
     m_solverState = SolverState::NOT_INITIALIZED;
     m_opti = casadi::Opti();
+    m_solution = nullptr;
     m_phases.clear();
 }
 

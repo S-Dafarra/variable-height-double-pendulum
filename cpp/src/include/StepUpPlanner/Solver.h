@@ -50,6 +50,10 @@ class StepUpPlanner::Solver {
 
     casadi::Opti m_opti;
 
+    std::unique_ptr<casadi::OptiSol> m_solution;
+
+    casadi::DM m_linSpacedPoints;
+
     casadi::Function getIntegratorDynamics();
 
     void createFeetConstraintsFunction(const std::string& name, const StepUpPlanner::Step& step,

@@ -43,6 +43,8 @@ public:
 
     unsigned int &phaseLength();
 
+    unsigned int phaseLength() const;
+
     bool setFinalStateAnticipation(double finalStateAnticipation); //The percentage of the last phase in which the error from the desired state is considered
 
     double getFinalStateAnticipation() const;

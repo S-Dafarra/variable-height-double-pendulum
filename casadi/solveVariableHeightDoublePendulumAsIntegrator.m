@@ -80,8 +80,7 @@ opti.set_initial(T, references.timings);
 points = linspace(0,1,N);
 position_guess = initialState.position + points.*(references.state.position - initialState.position);
 
-opti.set_initial(X(1, 2:end), position_guess(1,:));
-opti.set_initial(X(3, 2:end), position_guess(3,:));
+opti.set_initial(X(1:3, 2:end), position_guess(1:3,:));
 opti.set_initial(X(:,1), [initialState.position; initialState.velocity]);
 
 opti.minimize(weights.time * (T - references.timings)' * (T - references.timings) ...

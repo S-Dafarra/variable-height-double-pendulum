@@ -71,6 +71,11 @@ unsigned int &StepUpPlanner::Settings::phaseLength()
     return m_phaseLength;
 }
 
+unsigned int StepUpPlanner::Settings::phaseLength() const
+{
+    return m_phaseLength;
+}
+
 bool StepUpPlanner::Settings::setFinalStateAnticipation(double finalStateAnticipation)
 {
     if ((finalStateAnticipation > 1.0) || (finalStateAnticipation < 0.0))
