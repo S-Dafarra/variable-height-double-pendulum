@@ -2,6 +2,7 @@
 #define STEPUPPLANNER_SETTINGS_H
 
 #include <StepUpPlanner/CostWeights.h>
+#include <string>
 
 namespace StepUpPlanner {
     class Settings;
@@ -16,6 +17,9 @@ class StepUpPlanner::Settings {
     double m_finalStateAnticipation;
 
     unsigned int m_phaseLength;
+
+    std::string m_solverName;
+    unsigned int m_solverVerbosity;
 
     StepUpPlanner::CostWeights m_costWeights;
 
@@ -42,6 +46,15 @@ public:
     bool setFinalStateAnticipation(double finalStateAnticipation); //The percentage of the last phase in which the error from the desired state is considered
 
     double getFinalStateAnticipation() const;
+
+    //See https://www.coin-or.org/Ipopt/documentation/node51.html#SECTION0001111010000000000000 for options
+    bool setIpoptLinearSolver(const std::string& solverName);
+
+    const std::string& getIpoptLinearSolver() const;
+
+    unsigned int& solverVerbosity();
+
+    unsigned int solverVerbosity() const;
 
     StepUpPlanner::CostWeights& costWeights();
 

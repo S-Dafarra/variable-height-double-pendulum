@@ -1,5 +1,7 @@
 #include <StepUpPlanner/Settings.h>
 #include <iostream>
+#include <vector>
+#include <algorithm>
 
 StepUpPlanner::Settings::Settings()
     : m_maximumLegLength(1.5)
@@ -7,6 +9,7 @@ StepUpPlanner::Settings::Settings()
       , m_torsionalFrictionCoefficient(0.03)
       , m_finalStateAnticipation(0.3)
       , m_phaseLength(30)
+      , m_solverName("mumps")
 { }
 
 StepUpPlanner::Settings::~Settings()
@@ -84,6 +87,34 @@ bool StepUpPlanner::Settings::setFinalStateAnticipation(double finalStateAnticip
 double StepUpPlanner::Settings::getFinalStateAnticipation() const
 {
     return m_finalStateAnticipation;
+}
+
+bool StepUpPlanner::Settings::setIpoptLinearSolver(const std::string &solverName)
+{
+    std::vector<std::string> availableSolvers = {"ma27", "ma57", "ma77", "ma86", "ma97", "pardiso", "wsmp", "mumps", "custom"};
+
+    if (std::find(availableSolvers.begin(), availableSolvers.end(), solverName) == availableSolvers.end()) {
+        std::cerr << "[ERROR][StepUpPlanner::References::setIpoptLinearSolver] Unknown solver name. ";
+        std::cerr << "See options at https://www.coin-or.org/Ipopt/documentation/node51.html#SECTION0001111010000000000000." <<std::endl;
+        return false;
+    }
+
+    return true;
+}
+
+const std::string &StepUpPlanner::Settings::getIpoptLinearSolver() const
+{
+    return m_solverName;
+}
+
+unsigned int &StepUpPlanner::Settings::solverVerbosity()
+{
+    return m_solverVerbosity;
+}
+
+unsigned int StepUpPlanner::Settings::solverVerbosity() const
+{
+    return m_solverVerbosity;
 }
 
 StepUpPlanner::CostWeights &StepUpPlanner::Settings::costWeights()

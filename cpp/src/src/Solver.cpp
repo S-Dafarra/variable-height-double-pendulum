@@ -265,6 +265,24 @@ bool StepUpPlanner::Solver::setupProblem(const std::vector<StepUpPlanner::Phase>
 
     setupOpti();
 
+    casadi::Dict casadiOptions;
+    casadi::Dict ipoptOptions;
+
+    casadiOptions["expand"] = true;
+    unsigned int solverVerbosity = m_settings.solverVerbosity();
+    if (solverVerbosity) {
+        casadi_int ipoptVerbosity = solverVerbosity - 1;
+        ipoptOptions["print_level"] = ipoptVerbosity;
+        casadiOptions["print_time"] = true;
+    } else {
+        ipoptOptions["print_level"] = 0;
+        casadiOptions["print_time"] = false;
+    }
+    ipoptOptions["linear_solver"] = m_settings.getIpoptLinearSolver();
+    ipoptOptions["mu_strategy"] = "adaptive";
+
+    m_opti.solver("ipopt", casadiOptions, ipoptOptions);
+
     m_solverState = SolverState::PROBLEM_SET;
 
     return true;
@@ -318,9 +336,32 @@ StepUpPlanner::Phase &StepUpPlanner::Solver::getPhase(size_t i)
 
 bool StepUpPlanner::Solver::solve(const StepUpPlanner::State &initialState, const References &references)
 {
-    setParametersValue(initialState, references);
-    casadi::OptiSol solution = m_opti.solve();
+    if (m_solverState == SolverState::NOT_INITIALIZED) {
+        std::cerr << "[StepUpPlanner::Solver::solve] The problem is not set correctly" << std::endl;
+        return false;
+    }
 
+    if (m_solverState == SolverState::PROBLEM_SOLVED) {
+        //WARM START goes here
+    } else {
+        //Generic initialization goes here
+    }
+
+    m_solverState = SolverState::PROBLEM_SET;
+
+    setParametersValue(initialState, references);
+    std::unique_ptr<casadi::OptiSol> solution = nullptr;
+    try {
+        solution = std::make_unique<casadi::OptiSol>(m_opti.solve());
+    } catch (std::exception &e) {
+        std::cerr << "[StepUpPlanner::Solver::solve] Error while solving the optimization problem." << std::endl;
+        std::cerr << "Details: " << e.what() << std::endl;
+        return false;
+    }
+
+    //get the solution
+
+    m_solverState = SolverState::PROBLEM_SOLVED;
     return true;
 }
 
