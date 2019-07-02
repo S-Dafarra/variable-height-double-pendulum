@@ -115,7 +115,12 @@ bool StepUpPlanner::Step::setVertices(const std::vector<Vertex> &vertices)
     return true;
 }
 
-casadi::MX &StepUpPlanner::Step::position()
+casadi::DM &StepUpPlanner::Step::position()
+{
+    return m_position;
+}
+
+const casadi::DM &StepUpPlanner::Step::position() const
 {
     return m_position;
 }

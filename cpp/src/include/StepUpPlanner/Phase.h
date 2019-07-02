@@ -12,13 +12,15 @@ namespace StepUpPlanner {
 
 class StepUpPlanner::Phase {
 
-    casadi::MX m_duration;
+    casadi::DM m_duration;
     double m_minDuration, m_maxDuration, m_desiredDuration;
 
     StepUpPlanner::SideDependentObject<StepUpPlanner::Step> m_steps;
     StepUpPlanner::PhaseType m_phase;
 
 public:
+
+    Phase();
 
     Phase(StepUpPlanner::PhaseType phase);
 
@@ -30,18 +32,31 @@ public:
 
     bool setDurationSettings(double minimumDuration, double maximumDuration, double desiredDuration);
 
-    void setDesiredLeftPosition(double px, double py, double pz);
+    void setLeftPosition(double px, double py, double pz);
 
-    void setDesiredRightPosition(double px, double py, double pz);
+    void setRightPosition(double px, double py, double pz);
 
-    StepUpPlanner::PhaseType getPhase() const;
+    StepUpPlanner::PhaseType getPhaseType() const;
 
-    casadi::MX& duration();
+    const casadi::DM& duration() const;
+
+    casadi::DM& duration();
+
+    double minDuration() const;
+
+    double maxDuration() const;
+
+    double desiredDuration() const;
+
 
     //Returning only the position. In this way, it should not be possible to change the vertices (thus the number of constraints), once the solver object is created
-    casadi::MX& leftPosition();
+    casadi::DM &leftPosition();
 
-    casadi::MX& rightPosition();
+    const casadi::DM &leftPosition() const;
+
+    casadi::DM &rightPosition();
+
+    const casadi::DM &rightPosition() const;
 
     const StepUpPlanner::Step& getLeftStep() const;
 

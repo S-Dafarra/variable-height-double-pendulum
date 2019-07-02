@@ -13,6 +13,10 @@ class StepUpPlanner::Settings {
     double m_staticFrictionCoefficient;
     double m_torsionalFrictionCoefficient;
 
+    double m_finalStateAnticipation;
+
+    unsigned int m_phaseLength;
+
     StepUpPlanner::CostWeights m_costWeights;
 
 public:
@@ -32,6 +36,12 @@ public:
     bool setTorsionalFrictionCoefficient(double torsionalFrictionCoeff);
 
     double getTorsionalFrictionCoefficient() const;
+
+    unsigned int &phaseLength();
+
+    bool setFinalStateAnticipation(double finalStateAnticipation); //The percentage of the last phase in which the error from the desired state is considered
+
+    double getFinalStateAnticipation() const;
 
     StepUpPlanner::CostWeights& costWeights();
 

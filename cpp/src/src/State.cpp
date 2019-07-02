@@ -3,9 +3,7 @@
 StepUpPlanner::State::State()
     : m_position(3)
       , m_velocity(3)
-{
-    m_stacked = casadi::MX::vertcat({m_position, m_velocity});
-}
+{ }
 
 StepUpPlanner::State::State(const StepUpPlanner::State &other)
 {
@@ -24,12 +22,6 @@ void StepUpPlanner::State::operator=(const StepUpPlanner::State &other)
 {
     m_position = other.m_position;
     m_velocity = other.m_velocity;
-    m_stacked = casadi::MX::vertcat({m_position, m_velocity});
-}
-
-casadi::MX &StepUpPlanner::State::stateVector()
-{
-    return m_stacked;
 }
 
 void StepUpPlanner::State::setPosition(double px, double py, double pz)
@@ -46,12 +38,22 @@ void StepUpPlanner::State::setVelocity(double vx, double vy, double vz)
     m_velocity(2) = vz;
 }
 
-casadi::MX &StepUpPlanner::State::position()
+casadi::DM &StepUpPlanner::State::position()
 {
     return m_position;
 }
 
-casadi::MX &StepUpPlanner::State::velocity()
+const casadi::DM &StepUpPlanner::State::position() const
+{
+    return m_position;
+}
+
+casadi::DM &StepUpPlanner::State::velocity()
+{
+    return  m_velocity;
+}
+
+const casadi::DM &StepUpPlanner::State::velocity() const
 {
     return  m_velocity;
 }

@@ -9,11 +9,8 @@ namespace StepUpPlanner {
 
 class StepUpPlanner::State {
 
-    casadi::MX m_position;
-    casadi::MX m_velocity;
-
-    casadi::MX m_stacked;
-
+    casadi::DM m_position;
+    casadi::DM m_velocity;
 
 public:
 
@@ -31,11 +28,13 @@ public:
 
     void setVelocity(double vx, double vy, double vz);
 
-    casadi::MX& position();
+    casadi::DM& position();
 
-    casadi::MX& velocity();
+    const casadi::DM& position() const;
 
-    casadi::MX& stateVector();
+    casadi::DM& velocity();
+
+    const casadi::DM& velocity() const;
 };
 
 #endif // STEPUPPLANNER_STATE_H

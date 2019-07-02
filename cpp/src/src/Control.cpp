@@ -5,81 +5,43 @@ StepUpPlanner::FootControl::FootControl()
       , m_CoP(2)
 { }
 
-StepUpPlanner::FootControl::FootControl(const StepUpPlanner::FootControl &other)
-{
-    operator=(other);
-}
-
-StepUpPlanner::FootControl::FootControl(StepUpPlanner::FootControl &&other)
-{
-    operator=(other);
-}
-
 StepUpPlanner::FootControl::~FootControl()
 { }
 
-void StepUpPlanner::FootControl::operator=(const StepUpPlanner::FootControl &other)
+void StepUpPlanner::FootControl::setCoP(double copX, double copY)
 {
-    m_multiplier = other.m_multiplier;
-    m_CoP = other.m_CoP;
+    m_CoP(0) = copX;
+    m_CoP(1) = copY;
 }
 
-casadi::MX &StepUpPlanner::FootControl::cop()
-{
-    return m_CoP;
-}
-
-casadi::MX StepUpPlanner::FootControl::cop() const
+const casadi::DM &StepUpPlanner::FootControl::cop() const
 {
     return m_CoP;
 }
 
-casadi::MX &StepUpPlanner::FootControl::multiplier()
+void StepUpPlanner::FootControl::setMultiplier(double u)
 {
-    return m_multiplier;
+    m_multiplier(u);
 }
 
-casadi::MX StepUpPlanner::FootControl::multiplier() const
+const casadi::DM &StepUpPlanner::FootControl::multiplier() const
 {
     return m_multiplier;
 }
 
 StepUpPlanner::Control::Control()
-{
-    m_stacked = casadi::MX::vertcat({m_controls.left.multiplier(),
-                                     m_controls.left.cop(),
-                                     m_controls.right.multiplier(),
-                                     m_controls.right.cop()});
-}
+{ }
 
-StepUpPlanner::Control::Control(const StepUpPlanner::Control &other)
-{
-    this->operator=(other);
-}
-
-StepUpPlanner::Control::Control(StepUpPlanner::Control &&other)
-{
-    this->operator=(other);
-}
 
 StepUpPlanner::Control::~Control()
 { }
 
-void StepUpPlanner::Control::operator=(const StepUpPlanner::Control &other)
+StepUpPlanner::FootControl &StepUpPlanner::Control::leftControl()
 {
-    m_controls = other.m_controls;
-
-    m_stacked = casadi::MX::vertcat({m_controls.left.multiplier(),
-                                     m_controls.left.cop(),
-                                     m_controls.right.multiplier(),
-                                     m_controls.right.cop()});}
-
-casadi::MX &StepUpPlanner::Control::controlVector()
-{
-    return m_stacked;
+    return m_controls.left;
 }
 
-StepUpPlanner::FootControl &StepUpPlanner::Control::leftControl()
+const StepUpPlanner::FootControl &StepUpPlanner::Control::leftControl() const
 {
     return m_controls.left;
 }
@@ -89,3 +51,7 @@ StepUpPlanner::FootControl &StepUpPlanner::Control::rightControl()
     return m_controls.right;
 }
 
+const StepUpPlanner::FootControl &StepUpPlanner::Control::rightControl() const
+{
+    return m_controls.right;
+}

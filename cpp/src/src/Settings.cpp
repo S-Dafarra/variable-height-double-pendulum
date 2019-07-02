@@ -5,6 +5,8 @@ StepUpPlanner::Settings::Settings()
     : m_maximumLegLength(1.5)
       , m_staticFrictionCoefficient(0.5)
       , m_torsionalFrictionCoefficient(0.03)
+      , m_finalStateAnticipation(0.3)
+      , m_phaseLength(30)
 { }
 
 StepUpPlanner::Settings::~Settings()
@@ -59,6 +61,29 @@ bool StepUpPlanner::Settings::setTorsionalFrictionCoefficient(double torsionalFr
 double StepUpPlanner::Settings::getTorsionalFrictionCoefficient() const
 {
     return m_torsionalFrictionCoefficient;
+}
+
+unsigned int &StepUpPlanner::Settings::phaseLength()
+{
+    return m_phaseLength;
+}
+
+bool StepUpPlanner::Settings::setFinalStateAnticipation(double finalStateAnticipation)
+{
+    if ((finalStateAnticipation > 1.0) || (finalStateAnticipation < 0.0))
+    {
+        std::cerr << "[ERROR][StepUpPlanner::References::setFinalStateAnticipation] The final state anticipation is supposed to be in the interval [0.0, 1.0]." << std::endl;
+        return false;
+    }
+
+    m_finalStateAnticipation = finalStateAnticipation;
+
+    return true;
+}
+
+double StepUpPlanner::Settings::getFinalStateAnticipation() const
+{
+    return m_finalStateAnticipation;
 }
 
 StepUpPlanner::CostWeights &StepUpPlanner::Settings::costWeights()

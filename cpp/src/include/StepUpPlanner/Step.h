@@ -16,7 +16,7 @@ struct StepUpPlanner::Vertex {
 
 class StepUpPlanner::Step {
 
-    casadi::MX m_position;
+    casadi::DM m_position;
     std::vector<StepUpPlanner::Vertex> m_footVertices;
     std::vector<casadi::MX> m_edgeConstraints;
 
@@ -45,7 +45,9 @@ public:
 
     bool setVertices(const std::vector<StepUpPlanner::Vertex>& vertices);
 
-    casadi::MX &position();
+    casadi::DM &position();
+
+    const casadi::DM &position() const;
 
     casadi::MX getCoPBounds() const;
 

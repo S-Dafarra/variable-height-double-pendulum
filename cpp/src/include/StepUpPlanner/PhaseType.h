@@ -6,7 +6,8 @@ namespace StepUpPlanner {
         SINGLE_SUPPORT_LEFT,
         SINGLE_SUPPORT_RIGHT,
         DOUBLE_SUPPORT,
-        FLYING
+        FLYING,
+        UNDEFINED
     };
 }
 
