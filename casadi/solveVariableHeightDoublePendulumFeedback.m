@@ -128,7 +128,7 @@ opti.minimize(weights.time * (T - references.timings)' * (T - references.timings
 
 options = struct;
 options.expand = true;
-% options.ipopt.print_level = 0;
+options.ipopt.print_level = 0;
 options.ipopt.linear_solver='ma27';
     
 opti.solver('ipopt', options);

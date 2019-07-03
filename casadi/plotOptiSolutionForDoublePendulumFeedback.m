@@ -163,7 +163,7 @@ for i = 1 : length(t_sol)
     line([t t],get(ax,'YLim'),'Color','k', 'LineStyle','--')
 end
 title("Optimized Desired Acceleration")
-legend(["x", "y", "z"]);
+legend(["x_{fb}", "y_{fb}", "z_{fb}", "x", "y", "z"]);
 ylabel("[m/s^2]");
 xlabel("t [s]");
 

@@ -60,6 +60,7 @@ constraints.maximumTimings = 2.0 * ones(numberOfPhases,1);
 weights.time = 1;
 weights.finalState = 10;
 weights.u = 0.1/N;
+weights.uMax = 0.1;
 weights.cop = 10/N;
 weights.controlVariation = 1/N;
 weights.finalControl = 1;

@@ -46,7 +46,7 @@ class StepUpPlanner::Solver {
     casadi::MX m_initialStateParameter, m_desiredLegLengthParameter;
     casadi::MX m_referenceTimings, m_referenceStateParameter, m_referenceControlParameter;
 
-    casadi::MX m_X, m_U, m_A, m_T;
+    casadi::MX m_X, m_U, m_A, m_T, m_uMax;
     casadi::DM m_Xsol, m_Usol, m_Asol, m_Tsol;
 
     casadi::Opti m_opti;

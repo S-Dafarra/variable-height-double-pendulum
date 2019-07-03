@@ -40,6 +40,7 @@ N = numberOfPhases * phase_length;
 X = opti.variable(6, N + 1);
 A = opti.variable(3,N);
 U = opti.variable(6, N);
+maxU = opti.variable();
 
 T = opti.variable(numberOfPhases);
 
@@ -57,6 +58,7 @@ for phase = 1 : numberOfPhases
         if (activeFeet(phase, 1))
             opti.subject_to(footConstraints(X(:,k+1), U(1:3,k), feetLocations{phase,1}) <= bounds);
             torquesCost = torquesCost + ((X(3, k+1) - feetLocations{phase,1}(3) - references.legLength)*U(3,k))^2;
+            opti.subject_to(maxU - U(3,k) >= 0);
         else
             opti.subject_to(U(1:3,k) == zeros(3,1));
         end
@@ -64,6 +66,7 @@ for phase = 1 : numberOfPhases
         if (activeFeet(phase, 2))
             opti.subject_to(footConstraints(X(:,k+1), U(4:6,k), feetLocations{phase,2}) <= bounds);
             torquesCost = torquesCost + ((X(3, k+1) - feetLocations{phase,2}(3) - references.legLength)*U(6,k))^2;
+            opti.subject_to(maxU - U(6,k) >= 0);
         else
             opti.subject_to(U(4:6,k) == zeros(3,1));
         end
@@ -85,6 +88,7 @@ opti.set_initial(X(:,1), [initialState.position; initialState.velocity]);
 
 opti.minimize(weights.time * (T - references.timings)' * (T - references.timings) ...
     + weights.finalState * sumsqr(X(:,end - round(phase_length * references.state.anticipation) : end) - [references.state.position; references.state.velocity]) ...
+    + weights.uMax * maxU ...
     + weights.u * (sumsqr(U(3,:)) + sumsqr(U(6,:))) ...
     + weights.cop * (sumsqr(U(1:2,:)) + sumsqr(U(4:5,:))) ...
     + weights.controlVariation * sumsqr(U(:,2:end) - U(:,1:end-1)) ...

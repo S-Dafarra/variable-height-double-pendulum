@@ -11,6 +11,7 @@ public:
     double durationsDifference;
     double finalStateError;
     double multipliers;
+    double maxMultiplier;
     double cop;
     double controlVariations;
     double finalControl;

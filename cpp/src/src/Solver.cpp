@@ -175,6 +175,7 @@ void StepUpPlanner::Solver::setupOpti()
     m_A = m_opti.variable(3,N);
     m_U = m_opti.variable(6, N);
     m_T = m_opti.variable(numberOfPhases);
+    m_uMax = m_opti.variable();
 
     casadi::MX currentState = m_X(Sl(), 0);
     m_opti.subject_to(currentState == m_initialStateParameter);
@@ -214,6 +215,7 @@ void StepUpPlanner::Solver::setupOpti()
 
             if (leftIsActive) {
                 m_opti.subject_to(casadi::MX::vertcat(leftFootConstraints({currentState, leftControl, leftPosition})) <= leftFootBounds);
+                m_opti.subject_to(leftControl(2) - m_uMax <= 0);
                 torquesCost += casadi::MX::pow(((currentState(2) - leftPosition(2) - m_desiredLegLengthParameter) * leftControl(2)), 2);
             } else {
                 m_opti.subject_to(leftControl == casadi::MX::zeros(3,1));
@@ -221,6 +223,7 @@ void StepUpPlanner::Solver::setupOpti()
 
             if (rightIsActive) {
                 m_opti.subject_to(casadi::MX::vertcat(rightFootConstraints({currentState, rightControl, rightPosition})) <= rightFootBounds);
+                m_opti.subject_to(rightControl(2) - m_uMax <= 0);
                 torquesCost += casadi::MX::pow(((currentState(2) - rightPosition(2) - m_desiredLegLengthParameter) * rightControl(2)), 2);
             } else {
                 m_opti.subject_to(rightControl == casadi::MX::zeros(3,1));
@@ -241,6 +244,7 @@ void StepUpPlanner::Solver::setupOpti()
     casadi::MX costFunction = w.durationsDifference * casadi::MX::sumsqr(m_T - m_referenceTimings); //Timing error
     costFunction += w.finalStateError * casadi::MX::sumsqr(m_X(Sl(), lastStates) - m_referenceStateParameter); //Final state error
     costFunction += w.multipliers * (casadi::MX::sumsqr(m_U(2, Sl())) + casadi::MX::sumsqr(m_U(5, Sl())));
+    costFunction += w.maxMultiplier * m_uMax;
     costFunction += w.cop * (casadi::MX::sumsqr(m_U(Sl(0,1), Sl())) + casadi::MX::sumsqr(m_U(Sl(3,4), Sl())));
     costFunction += w.controlVariations * (casadi::MX::sumsqr(m_U(Sl(), Sl(1, N-1)) - m_U(Sl(), Sl(0, N-2))));
     costFunction += w.finalControl * casadi::MX::sumsqr(m_U(Sl(), N-1) - m_referenceControlParameter);
