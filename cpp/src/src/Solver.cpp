@@ -102,7 +102,7 @@ casadi::Function StepUpPlanner::Solver::getAccelerationConsistencyConstraintFunc
     return casadi::Function(name, {X, U, A, leftLocation, rightLocation}, {constraint});
 }
 
-bool StepUpPlanner::Solver::fillPhaseDataVector(std::vector<StepUpPlanner::Phase> phases)
+bool StepUpPlanner::Solver::fillPhaseDataVector(const std::vector<Phase> &phases)
 {
     m_phases.resize(phases.size());
 
@@ -153,6 +153,9 @@ bool StepUpPlanner::Solver::fillPhaseDataVector(std::vector<StepUpPlanner::Phase
         m_phases[i].feetLocationParameter.right = m_opti.parameter(3);
         m_phases[i].minDurationParameter = m_opti.parameter();
         m_phases[i].maxDurationParameter = m_opti.parameter();
+
+        m_phases[i].phase.states().resize(m_settings.phaseLength());
+        m_phases[i].phase.controls().resize(m_settings.phaseLength());
     }
 
     m_referenceTimings = m_opti.parameter(static_cast<casadi_int>(m_phases.size()));
@@ -266,6 +269,11 @@ bool StepUpPlanner::Solver::setupProblem(const std::vector<StepUpPlanner::Phase>
     casadi_int npoints = static_cast<casadi_int>(m_phases.size() * settings.phaseLength());
     m_linSpacedPoints = casadi::DM::linspace(0, 1, npoints + 1);
 
+    m_Xsol.resize(6, npoints +1);
+    m_Usol.resize(6, npoints);
+    m_Asol.resize(3, npoints);
+    m_Tsol.resize(static_cast<casadi_int>(m_phases.size()), 1);
+
     setupOpti();
 
     casadi::Dict casadiOptions;
@@ -311,6 +319,40 @@ void StepUpPlanner::Solver::setParametersValue(const StepUpPlanner::State &initi
     }
 }
 
+void StepUpPlanner::Solver::fillSolution()
+{
+    m_Xsol = m_solution->value(m_X);
+    m_Usol = m_solution->value(m_U);
+    m_Asol = m_solution->value(m_A);
+    m_Tsol = m_solution->value(m_T);
+
+    casadi_int currentInstant = 0;
+
+    for (size_t p = 0; p < m_phases.size(); ++p) {
+        StepUpPlanner::Phase& phase = m_phases[p].phase;
+
+        std::vector<StepUpPlanner::State>& states = phase.states();
+        states.resize(m_settings.phaseLength()); //Note that memory should be already allocated when setting the phases
+        std::vector<StepUpPlanner::Control>& controls = phase.controls();
+        controls.resize(m_settings.phaseLength());
+
+        phase.duration() = m_Tsol(p);
+
+        for (size_t k = 0; k < m_settings.phaseLength(); ++k) {
+            states[k].position() = m_Xsol(casadi::Slice(0,2), currentInstant + 1);
+            states[k].velocity() = m_Xsol(casadi::Slice(3,5), currentInstant + 1);
+            controls[k].acceleration() = m_Asol(casadi::Slice(), currentInstant);
+            controls[k].left().cop() = m_Usol(casadi::Slice(0,1), currentInstant);
+            controls[k].left().multiplier() = m_Usol(2, currentInstant);
+            controls[k].right().cop() = m_Usol(casadi::Slice(3,4), currentInstant);
+            controls[k].right().multiplier() = m_Usol(5, currentInstant);
+
+            currentInstant++;
+        }
+
+    }
+}
+
 StepUpPlanner::Solver::Solver()
     : m_solverState(SolverState::NOT_INITIALIZED)
       , m_solution(nullptr)
@@ -333,7 +375,19 @@ bool StepUpPlanner::Solver::resetProblem(const std::vector<StepUpPlanner::Phase>
     return setupProblem(phases, settings);
 }
 
+size_t StepUpPlanner::Solver::numberOfPhases() const
+{
+    return m_phases.size();
+}
+
 StepUpPlanner::Phase &StepUpPlanner::Solver::getPhase(size_t i)
+{
+    assert(i < m_phases.size() && "[ERROR][StepUpPlanner::Solver::getPhase] Index out of bounds.");
+    assert(m_solverState == SolverState::PROBLEM_SET && "[ERROR][StepUpPlanner::Solver::getPhase] First you have to set the problem.");
+    return m_phases[i].phase;
+}
+
+const StepUpPlanner::Phase &StepUpPlanner::Solver::getPhase(size_t i) const
 {
     assert(i < m_phases.size() && "[ERROR][StepUpPlanner::Solver::getPhase] Index out of bounds.");
     assert(m_solverState == SolverState::PROBLEM_SET && "[ERROR][StepUpPlanner::Solver::getPhase] First you have to set the problem.");
@@ -368,7 +422,7 @@ bool StepUpPlanner::Solver::solve(const StepUpPlanner::State &initialState, cons
 
         for (casadi_int k = 1; k < npoints + 1; ++k) {
             interpolatedPosition = initPos + m_linSpacedPoints(k) * (refPos - initPos);
-            m_opti.set_initial(m_X(casadi::Slice(0, 2), k), interpolatedPosition); //this should depend on the direction of motion
+            m_opti.set_initial(m_X(casadi::Slice(0, 2), k), interpolatedPosition);
         }
     }
 
@@ -385,9 +439,25 @@ bool StepUpPlanner::Solver::solve(const StepUpPlanner::State &initialState, cons
         return false;
     }
 
-    //get the solution
+    fillSolution();
 
     m_solverState = SolverState::PROBLEM_SOLVED;
+    return true;
+}
+
+bool StepUpPlanner::Solver::getFullSolution(std::vector<StepUpPlanner::Phase> &phases) const
+{
+    if (m_solverState != SolverState::PROBLEM_SOLVED) {
+        std::cerr << "[StepUpPlanner::Solver::getFullSolution] No solution available." << std::endl;
+        return false;
+    }
+
+    phases.resize(m_phases.size());
+
+    for (size_t i = 0; i < m_phases.size(); ++i) {
+        phases[i] = m_phases[i].phase;
+    }
+
     return true;
 }
 
@@ -397,5 +467,9 @@ void StepUpPlanner::Solver::clear()
     m_opti = casadi::Opti();
     m_solution = nullptr;
     m_phases.clear();
+    m_Xsol.clear();
+    m_Usol.clear();
+    m_Tsol.clear();
+    m_Asol.clear();
 }
 

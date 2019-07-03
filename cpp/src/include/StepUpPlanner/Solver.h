@@ -47,6 +47,7 @@ class StepUpPlanner::Solver {
     casadi::MX m_referenceTimings, m_referenceStateParameter, m_referenceControlParameter;
 
     casadi::MX m_X, m_U, m_A, m_T;
+    casadi::DM m_Xsol, m_Usol, m_Asol, m_Tsol;
 
     casadi::Opti m_opti;
 
@@ -61,7 +62,7 @@ class StepUpPlanner::Solver {
 
     casadi::Function getAccelerationConsistencyConstraintFunction(const std::string &name, const StepUpPlanner::SideDependentObject<bool> &isActive);
 
-    bool fillPhaseDataVector(std::vector<StepUpPlanner::Phase> phases);
+    bool fillPhaseDataVector(const std::vector<StepUpPlanner::Phase>& phases);
 
     void setupOpti();
 
@@ -70,6 +71,8 @@ class StepUpPlanner::Solver {
     void setParametersValue(const StepUpPlanner::State &initialState, const References &references);
 
     void setInitialValues(const StepUpPlanner::References& references);
+
+    void fillSolution();
 
 public:
 
@@ -85,9 +88,15 @@ public:
 
     bool resetProblem(const std::vector<StepUpPlanner::Phase>& phases, const StepUpPlanner::Settings& settings);
 
-    StepUpPlanner::Phase& getPhase(size_t i);
+    size_t numberOfPhases() const;
+
+    StepUpPlanner::Phase& getPhase(size_t i); //Use this to change the feet positions from one iteration to the other
+
+    const StepUpPlanner::Phase& getPhase(size_t i) const;
 
     bool solve(const StepUpPlanner::State& initialState, const StepUpPlanner::References& references);
+
+    bool getFullSolution(std::vector<StepUpPlanner::Phase>& phases) const;
 
     void clear();
 };

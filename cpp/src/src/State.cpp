@@ -1,8 +1,8 @@
 #include <StepUpPlanner/State.h>
 
 StepUpPlanner::State::State()
-    : m_position(3)
-      , m_velocity(3)
+    : m_position(3, 1)
+      , m_velocity(3, 1)
 { }
 
 StepUpPlanner::State::State(const StepUpPlanner::State &other)

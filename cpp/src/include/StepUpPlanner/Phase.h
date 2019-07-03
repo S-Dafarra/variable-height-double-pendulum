@@ -5,6 +5,9 @@
 #include <StepUpPlanner/SideDependentObject.h>
 #include <StepUpPlanner/Step.h>
 #include <StepUpPlanner/PhaseType.h>
+#include <StepUpPlanner/State.h>
+#include <StepUpPlanner/Control.h>
+#include <vector>
 
 namespace StepUpPlanner {
     class Phase;
@@ -17,6 +20,9 @@ class StepUpPlanner::Phase {
 
     StepUpPlanner::SideDependentObject<StepUpPlanner::Step> m_steps;
     StepUpPlanner::PhaseType m_phase;
+
+    std::vector<StepUpPlanner::State> m_statesSolution;
+    std::vector<StepUpPlanner::Control> m_controlsSolution;
 
 public:
 
@@ -48,7 +54,6 @@ public:
 
     double desiredDuration() const;
 
-
     //Returning only the position. In this way, it should not be possible to change the vertices (thus the number of constraints), once the solver object is created
     casadi::DM &leftPosition();
 
@@ -61,6 +66,14 @@ public:
     const StepUpPlanner::Step& getLeftStep() const;
 
     const StepUpPlanner::Step& getRightStep() const;
+
+    const std::vector<StepUpPlanner::State>& states() const;
+
+    std::vector<StepUpPlanner::State>& states();
+
+    const std::vector<StepUpPlanner::Control>& controls() const;
+
+    std::vector<StepUpPlanner::Control>& controls();
 
 };
 

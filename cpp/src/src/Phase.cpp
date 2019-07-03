@@ -2,20 +2,23 @@
 #include <iostream>
 
 StepUpPlanner::Phase::Phase()
-    : m_minDuration(0.5)
+    : m_duration(1,1)
+      ,m_minDuration(0.5)
       , m_maxDuration(2.0)
       , m_desiredDuration(1.0)
       , m_phase(StepUpPlanner::PhaseType::UNDEFINED)
 { }
 
 StepUpPlanner::Phase::Phase(PhaseType phase)
-    : m_minDuration(0.5)
+    : m_duration(1,1)
+      ,m_minDuration(0.5)
       , m_maxDuration(2.0)
       , m_desiredDuration(1.0)
       , m_phase(phase)
 { }
 
 StepUpPlanner::Phase::Phase(const Step *left, const Step *right)
+    : m_duration(1,1)
 {
     if (left && right) {
         m_phase = StepUpPlanner::PhaseType::DOUBLE_SUPPORT;
@@ -72,6 +75,31 @@ StepUpPlanner::PhaseType StepUpPlanner::Phase::getPhaseType() const
     return m_phase;
 }
 
+const casadi::DM &StepUpPlanner::Phase::duration() const
+{
+    return m_duration;
+}
+
+casadi::DM &StepUpPlanner::Phase::duration()
+{
+    return m_duration;
+}
+
+double StepUpPlanner::Phase::minDuration() const
+{
+    return m_minDuration;
+}
+
+double StepUpPlanner::Phase::maxDuration() const
+{
+    return m_maxDuration;
+}
+
+double StepUpPlanner::Phase::desiredDuration() const
+{
+    return m_desiredDuration;
+}
+
 casadi::DM &StepUpPlanner::Phase::leftPosition()
 {
     return m_steps.left.position();
@@ -102,27 +130,23 @@ const StepUpPlanner::Step &StepUpPlanner::Phase::getRightStep() const
     return m_steps.right;
 }
 
-const casadi::DM &StepUpPlanner::Phase::duration() const
+const std::vector<StepUpPlanner::State> &StepUpPlanner::Phase::states() const
 {
-    return m_duration;
+    return m_statesSolution;
 }
 
-casadi::DM &StepUpPlanner::Phase::duration()
+std::vector<StepUpPlanner::State> &StepUpPlanner::Phase::states()
 {
-    return m_duration;
+    return m_statesSolution;
 }
 
-double StepUpPlanner::Phase::minDuration() const
+const std::vector<StepUpPlanner::Control> &StepUpPlanner::Phase::controls() const
 {
-    return m_minDuration;
+    return m_controlsSolution;
 }
 
-double StepUpPlanner::Phase::maxDuration() const
+std::vector<StepUpPlanner::Control> &StepUpPlanner::Phase::controls()
 {
-    return m_maxDuration;
+    return m_controlsSolution;
 }
 
-double StepUpPlanner::Phase::desiredDuration() const
-{
-    return m_desiredDuration;
-}

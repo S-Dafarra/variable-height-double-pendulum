@@ -21,11 +21,11 @@ public:
     ~FootControl();
 
     //in foot coordinates
-    void setCoP(double copX, double copY);
+    casadi::DM &cop();
 
     const casadi::DM &cop() const;
 
-    void setMultiplier(double u);
+    casadi::DM &multiplier();
 
     const casadi::DM &multiplier() const;
 };
@@ -33,12 +33,17 @@ public:
 class StepUpPlanner::Control {
 
     StepUpPlanner::SideDependentObject<StepUpPlanner::FootControl> m_controls;
+    casadi::DM m_acceleration;
 
 public:
 
     Control();
 
     ~Control();
+
+    const casadi::DM& acceleration() const;
+
+    casadi::DM& acceleration();
 
     StepUpPlanner::FootControl &left();
 
