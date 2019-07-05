@@ -60,6 +60,8 @@ public:
 
     StepUpPlanner::CostWeights& costWeights();
 
+    const StepUpPlanner::CostWeights& costWeights() const;
+
 };
 
 #endif //  STEPUPPLANNER_SETTINGS_H

@@ -127,3 +127,8 @@ StepUpPlanner::CostWeights &StepUpPlanner::Settings::costWeights()
     return m_costWeights;
 }
 
+const StepUpPlanner::CostWeights &StepUpPlanner::Settings::costWeights() const
+{
+    return m_costWeights;
+}
+

@@ -106,6 +106,6 @@ include(AddUninstallTarget)
 
 # Add integration tests (unit tests for each library should be in each sublibrary directory).
 if(BUILD_TESTING)
-#    add_subdirectory(test)
+    add_subdirectory(test)
 endif()
 
