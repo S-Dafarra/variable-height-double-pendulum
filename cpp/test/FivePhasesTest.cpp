@@ -1,4 +1,17 @@
 #include <StepUpPlanner/Solver.h>
+#include <cassert>
+
+#define ASSERT_IS_TRUE(prop) assertTrue(prop,__FILE__,__LINE__)
+
+void assertTrue(bool prop, std::string file, int line)
+{
+    if( !prop )
+    {
+        std::cerr << file << ":" << line << " : assertTrue failure" << std::endl;
+        assert(false);
+        exit(EXIT_FAILURE);
+    }
+}
 
 int main() {
 
@@ -6,15 +19,22 @@ int main() {
 
     l1.setPosition(0.0, 0.15, 0.0);
     l1.setVertices({{0.05, 0.05}, {0.05, -0.05}, {-0.05, -0.05}, {-0.05, 0.05}});
+    ASSERT_IS_TRUE(!l1.getCoPConstraintsFunction().is_null());
 
     r1.setPosition(0.0, -0.15, 0.0);
     r1.setVertices({{0.05, 0.05}, {0.05, -0.05}, {-0.05, -0.05}, {-0.05, 0.05}});
+    ASSERT_IS_TRUE(!r1.getCoPConstraintsFunction().is_null());
+
 
     l2.setPosition(0.6, 0.15, 0.4);
     l2.setVertices({{0.05, 0.05}, {0.05, -0.05}, {-0.05, -0.05}, {-0.05, 0.05}});
+    ASSERT_IS_TRUE(!l2.getCoPConstraintsFunction().is_null());
+
 
     r2.setPosition(0.6, -0.15, 0.4);
     r2.setVertices({{0.05, 0.05}, {0.05, -0.05}, {-0.05, -0.05}, {-0.05, 0.05}});
+    ASSERT_IS_TRUE(!r2.getCoPConstraintsFunction().is_null());
+
 
     std::vector<StepUpPlanner::Phase> phases = {StepUpPlanner::Phase(&l1, &r1),
                                                 StepUpPlanner::Phase(nullptr, &r1),

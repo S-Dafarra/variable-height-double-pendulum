@@ -29,17 +29,11 @@ public:
 
     Step();
 
-    Step(const Step& other);
-
-    Step(Step&& other);
-
     Step(double px, double py, double pz);
 
     Step(double px, double py, double pz, const std::vector<StepUpPlanner::Vertex>& vertices);
 
     ~Step();
-
-    void operator=(const Step& other);
 
     void setPosition(double px, double py, double pz);
 

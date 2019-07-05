@@ -65,16 +65,6 @@ StepUpPlanner::Step::Step()
     : m_position(3,1)
 { }
 
-StepUpPlanner::Step::Step(const StepUpPlanner::Step &other)
-{
-    operator=(other);
-}
-
-StepUpPlanner::Step::Step(StepUpPlanner::Step &&other)
-{
-    operator=(other);
-}
-
 StepUpPlanner::Step::Step(double px, double py, double pz)
 {
     setPosition(px, py, pz);
@@ -89,12 +79,6 @@ StepUpPlanner::Step::Step(double px, double py, double pz, const std::vector<Ver
 
 StepUpPlanner::Step::~Step()
 { }
-
-void StepUpPlanner::Step::operator=(const StepUpPlanner::Step &other)
-{
-    m_position = other.m_position;
-    m_footVertices = other.m_footVertices;
-}
 
 void StepUpPlanner::Step::setPosition(double px, double py, double pz)
 {
