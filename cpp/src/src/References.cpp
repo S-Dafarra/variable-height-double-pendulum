@@ -45,3 +45,10 @@ const StepUpPlanner::Control &StepUpPlanner::References::desiredControl() const
 {
     return m_desiredControl;
 }
+
+void StepUpPlanner::References::zero()
+{
+    m_desiredState.zero();
+    m_desiredControl.zero();
+    m_desiredLegLength = 0.0;
+}

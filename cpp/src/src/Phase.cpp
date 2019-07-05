@@ -19,6 +19,9 @@ StepUpPlanner::Phase::Phase(PhaseType phase)
 
 StepUpPlanner::Phase::Phase(const Step *left, const Step *right)
     : m_duration(1,1)
+      ,m_minDuration(0.5)
+      , m_maxDuration(2.0)
+      , m_desiredDuration(1.0)
 {
     if (left && right) {
         m_phase = StepUpPlanner::PhaseType::DOUBLE_SUPPORT;

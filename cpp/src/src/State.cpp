@@ -5,24 +5,8 @@ StepUpPlanner::State::State()
       , m_velocity(3, 1)
 { }
 
-StepUpPlanner::State::State(const StepUpPlanner::State &other)
-{
-    this->operator=(other);
-}
-
-StepUpPlanner::State::State(StepUpPlanner::State &&other)
-{
-    this->operator=(other);
-}
-
 StepUpPlanner::State::~State()
 { }
-
-void StepUpPlanner::State::operator=(const StepUpPlanner::State &other)
-{
-    m_position = other.m_position;
-    m_velocity = other.m_velocity;
-}
 
 void StepUpPlanner::State::setPosition(double px, double py, double pz)
 {
@@ -56,4 +40,10 @@ casadi::DM &StepUpPlanner::State::velocity()
 const casadi::DM &StepUpPlanner::State::velocity() const
 {
     return  m_velocity;
+}
+
+void StepUpPlanner::State::zero()
+{
+    setPosition(0.0, 0.0, 0.0);
+    setVelocity(0.0, 0.0, 0.0);
 }

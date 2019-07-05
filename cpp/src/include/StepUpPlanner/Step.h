@@ -47,6 +47,8 @@ public:
 
     casadi::Function getCoPConstraintsFunction() const;
 
+    void clear();
+
 };
 
 #endif // STEPUPPLANNER_STEP_H

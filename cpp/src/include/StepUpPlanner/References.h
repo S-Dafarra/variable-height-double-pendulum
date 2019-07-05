@@ -34,6 +34,8 @@ public:
 
     const StepUpPlanner::Control &desiredControl() const;
 
+    void zero();
+
 };
 
 

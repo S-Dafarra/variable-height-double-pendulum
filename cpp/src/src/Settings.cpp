@@ -104,6 +104,8 @@ bool StepUpPlanner::Settings::setIpoptLinearSolver(const std::string &solverName
         return false;
     }
 
+    m_solverName = solverName;
+
     return true;
 }
 

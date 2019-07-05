@@ -25,9 +25,15 @@ public:
 
     const casadi::DM &cop() const;
 
+    void setCoP(double copX, double copY);
+
     casadi::DM &multiplier();
 
     const casadi::DM &multiplier() const;
+
+    void setMultiplier(double multiplier);
+
+    void zero();
 };
 
 class StepUpPlanner::Control {
@@ -53,7 +59,7 @@ public:
 
     const StepUpPlanner::FootControl &right() const;
 
-
+    void zero();
 };
 
 #endif // STEPUPPLANNER_CONTROL_H

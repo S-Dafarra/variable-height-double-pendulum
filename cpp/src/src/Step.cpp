@@ -118,3 +118,12 @@ casadi::Function StepUpPlanner::Step::getCoPConstraintsFunction() const
 {
     return m_copConstraints;
 }
+
+void StepUpPlanner::Step::clear()
+{
+    setPosition(0.0, 0.0, 0.0);
+    m_footVertices.clear();
+    m_edgeConstraints.clear();
+    m_copBounds = casadi::MX();
+    m_copConstraints = casadi::Function();
+}

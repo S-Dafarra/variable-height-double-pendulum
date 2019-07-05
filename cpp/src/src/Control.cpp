@@ -18,6 +18,12 @@ const casadi::DM &StepUpPlanner::FootControl::cop() const
     return m_CoP;
 }
 
+void StepUpPlanner::FootControl::setCoP(double copX, double copY)
+{
+    m_CoP(0) = copX;
+    m_CoP(1) = copY;
+}
+
 casadi::DM &StepUpPlanner::FootControl::multiplier()
 {
     return m_multiplier;
@@ -26,6 +32,18 @@ casadi::DM &StepUpPlanner::FootControl::multiplier()
 const casadi::DM &StepUpPlanner::FootControl::multiplier() const
 {
     return m_multiplier;
+}
+
+void StepUpPlanner::FootControl::setMultiplier(double multiplier)
+{
+    m_multiplier = multiplier;
+}
+
+void StepUpPlanner::FootControl::zero()
+{
+    m_multiplier = 0.0;
+    m_CoP(0) = 0.0;
+    m_CoP(1) = 0.0;
 }
 
 StepUpPlanner::Control::Control()
@@ -64,4 +82,13 @@ StepUpPlanner::FootControl &StepUpPlanner::Control::right()
 const StepUpPlanner::FootControl &StepUpPlanner::Control::right() const
 {
     return m_controls.right;
+}
+
+void StepUpPlanner::Control::zero()
+{
+    m_acceleration(0) = 0.0;
+    m_acceleration(1) = 0.0;
+    m_acceleration(2) = 0.0;
+    m_controls.left.zero();
+    m_controls.right.zero();
 }

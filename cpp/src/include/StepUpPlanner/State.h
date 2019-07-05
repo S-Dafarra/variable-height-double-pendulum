@@ -16,13 +16,7 @@ public:
 
     State();
 
-    State(const State& other);
-
-    State(State&& other);
-
     ~State();
-
-    void operator=(const State& other);
 
     void setPosition(double px, double py, double pz);
 
@@ -35,6 +29,8 @@ public:
     casadi::DM& velocity();
 
     const casadi::DM& velocity() const;
+
+    void zero();
 };
 
 #endif // STEPUPPLANNER_STATE_H
