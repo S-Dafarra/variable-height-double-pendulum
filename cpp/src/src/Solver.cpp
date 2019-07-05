@@ -11,9 +11,9 @@ casadi::Function StepUpPlanner::Solver::getIntegratorDynamics()
 
     casadi::MX p = x(casadi::Slice(0, 3));
     casadi::MX v = x(casadi::Slice(3, 6));
-    casadi::MX g = casadi::MX::zeros(3,1);
+    casadi::DM g = casadi::DM::zeros(3,1);
     g(2) = -9.81;
-    casadi::MX rhs = casadi::MX::vertcat({p + dT * v + 0.5 * casadi::MX::pow(dT,2) * (a + g),
+    casadi::MX rhs = casadi::MX::vertcat({p + dT * (v + 0.5 * dT * (a + g)),
                                           v + dT * (a + g)});
 
     return casadi::Function("Integrator", {x, a, dT}, {rhs});
@@ -54,16 +54,16 @@ void StepUpPlanner::Solver::createFeetConstraintsFunction(const std::string &nam
     casadi::MX constraintsExpression;
     if (copConstraintsFcn.is_null()) {
 
-        constraintsExpression = casadi::MX::vertcat({frictionExpressions,
+        constraintsExpression = casadi::MX::vertcat({/*frictionExpressions,*/
                                                      multiplierPositivityExpression, legLengthExpression});
-        outputBounds = casadi::MX::vertcat({frictionBounds, 0, legLength * legLength});
+        outputBounds = casadi::MX::vertcat({/*frictionBounds,*/ 0, legLength * legLength});
 
     } else {
         casadi::MX copConstraintsExpressions = casadi::MX::vertcat(copConstraintsFcn(footCoP));
 
-        constraintsExpression = casadi::MX::vertcat({frictionExpressions, copConstraintsExpressions,
+        constraintsExpression = casadi::MX::vertcat({/*frictionExpressions,*/ copConstraintsExpressions,
                                                      multiplierPositivityExpression, legLengthExpression});
-        outputBounds = casadi::MX::vertcat({frictionBounds, step.getCoPBounds(), 0, legLength * legLength});
+        outputBounds = casadi::MX::vertcat({/*frictionBounds,*/ step.getCoPBounds(), 0, legLength * legLength});
     }
 
     outputFunction = casadi::Function(name, {state, footControl, footLocation}, {constraintsExpression});
@@ -92,11 +92,11 @@ casadi::Function StepUpPlanner::Solver::getAccelerationConsistencyConstraintFunc
     casadi::MX constraint = A;
 
     if (isActive.left) {
-        constraint = constraint - (currentPosition - (leftLocation + leftCoPInWorld)) * ul;
+        constraint -= (currentPosition - (leftLocation + leftCoPInWorld)) * ul;
     }
 
     if (isActive.right) {
-        constraint = constraint - (currentPosition - (rightLocation + leftCoPInWorld)) * ur;
+        constraint -= (currentPosition - (rightLocation + rightCoPInWorld)) * ur;
     }
 
     return casadi::Function(name, {X, U, A, leftLocation, rightLocation}, {constraint});
@@ -116,21 +116,11 @@ bool StepUpPlanner::Solver::fillPhaseDataVector(const std::vector<Phase> &phases
             return false;
         }
 
-        size_t activeConstraints = 0;
-
         m_phases[i].isActive.left = (phaseType == StepUpPlanner::PhaseType::DOUBLE_SUPPORT) ||
             (phaseType == StepUpPlanner::PhaseType::SINGLE_SUPPORT_LEFT);
 
-        if (m_phases[i].isActive.left) {
-            activeConstraints++;
-        }
-
         m_phases[i].isActive.right = (phaseType == StepUpPlanner::PhaseType::DOUBLE_SUPPORT) ||
             (phaseType == StepUpPlanner::PhaseType::SINGLE_SUPPORT_RIGHT);
-
-        if (m_phases[i].isActive.right) {
-            activeConstraints++;
-        }
 
         m_phases[i].accelerationConsistencyConstraint = getAccelerationConsistencyConstraintFunction("Consinstency" + std::to_string(i),
                                                                                                      m_phases[i].isActive);
@@ -177,19 +167,18 @@ void StepUpPlanner::Solver::setupOpti()
     m_T = m_opti.variable(numberOfPhases);
     m_uMax = m_opti.variable();
 
-    casadi::MX currentState = m_X(Sl(), 0);
-    m_opti.subject_to(currentState == m_initialStateParameter);
-
-    casadi::MX previousState = currentState;
-    casadi::MX currentControl, currentAcceleration, leftControl, rightControl;
+    m_opti.subject_to(m_X(Sl(), 0) == m_initialStateParameter);
 
     casadi::MX torquesCost = 0;
 
     for (casadi_int phase = 0; phase < numberOfPhases; ++phase) {
 
+        size_t castedPhase = static_cast<size_t>(phase);
+
         casadi::MX dT = m_T(phase)/phaseLength;
 
-        size_t castedPhase = static_cast<size_t>(phase);
+        m_opti.subject_to(m_phases[castedPhase].minDurationParameter <= m_T(phase) <= m_phases[castedPhase].maxDurationParameter);
+
         bool leftIsActive = m_phases[castedPhase].isActive.left;
         bool rightIsActive = m_phases[castedPhase].isActive.right;
 
@@ -205,37 +194,28 @@ void StepUpPlanner::Solver::setupOpti()
 
 
         for (casadi_int k = 0; k < phaseLength; ++k) {
-            currentState = m_X(Sl(), k + 1);
-            currentControl = m_U(Sl(), k);
-            currentAcceleration = m_A(Sl(), k);
-
-            leftControl = currentControl(Sl(0,3));
-            rightControl = currentControl(Sl(3,6));
-            m_opti.subject_to(currentState == casadi::MX::vertcat(m_integratorDynamics({previousState, currentAcceleration, dT})));
+            m_opti.subject_to(m_X(Sl(), k + 1) == casadi::MX::vertcat(m_integratorDynamics({m_X(Sl(), k), m_A(Sl(), k), dT})));
 
             if (leftIsActive) {
-                m_opti.subject_to(casadi::MX::vertcat(leftFootConstraints({currentState, leftControl, leftPosition})) <= leftFootBounds);
-                m_opti.subject_to(leftControl(2) - m_uMax <= 0);
-                torquesCost += casadi::MX::pow(((currentState(2) - leftPosition(2) - m_desiredLegLengthParameter) * leftControl(2)), 2);
+                m_opti.subject_to(casadi::MX::vertcat(leftFootConstraints({m_X(Sl(), k + 1), m_U(Sl(0,3), k), leftPosition})) <= leftFootBounds);
+                m_opti.subject_to(m_U(2, k) - m_uMax <= 0);
+                torquesCost += casadi::MX::pow(((m_X(2, k + 1) - leftPosition(2) - m_desiredLegLengthParameter) * m_U(2, k)), 2);
             } else {
-                m_opti.subject_to(leftControl == casadi::MX::zeros(3,1));
+                m_opti.subject_to(m_U(Sl(0,3), k) == casadi::MX::zeros(3,1));
             }
 
             if (rightIsActive) {
-                m_opti.subject_to(casadi::MX::vertcat(rightFootConstraints({currentState, rightControl, rightPosition})) <= rightFootBounds);
-                m_opti.subject_to(rightControl(2) - m_uMax <= 0);
-                torquesCost += casadi::MX::pow(((currentState(2) - rightPosition(2) - m_desiredLegLengthParameter) * rightControl(2)), 2);
+                m_opti.subject_to(casadi::MX::vertcat(rightFootConstraints({m_X(Sl(), k + 1), m_U(Sl(3,6), k), rightPosition})) <= rightFootBounds);
+                m_opti.subject_to(m_U(5, k) - m_uMax <= 0);
+                torquesCost += casadi::MX::pow(((m_X(2, k + 1) - rightPosition(2) - m_desiredLegLengthParameter) * m_U(5, k)), 2);
             } else {
-                m_opti.subject_to(rightControl == casadi::MX::zeros(3,1));
+                m_opti.subject_to(m_U(Sl(3,6), k) == casadi::MX::zeros(3,1));
             }
 
-            m_opti.subject_to(casadi::MX::vertcat(accelerationConstraint({currentState, currentControl, currentAcceleration,
-                                                                          leftPosition, rightPosition})) == casadi::MX::zeros(3,1));
+            m_opti.subject_to(casadi::MX::vertcat(accelerationConstraint({m_X(Sl(), k + 1), m_U(Sl(), k), m_A(Sl(), k),
+                                                                          leftPosition, rightPosition})) == casadi::DM::zeros(3,1));
 
-            previousState = currentState;
         }
-
-        m_opti.subject_to(m_phases[castedPhase].minDurationParameter <= m_T(phase) <= m_phases[castedPhase].maxDurationParameter);
     }
 
     StepUpPlanner::CostWeights w = m_settings.costWeights();
@@ -353,7 +333,6 @@ void StepUpPlanner::Solver::fillSolution()
 
             currentInstant++;
         }
-
     }
 }
 
@@ -422,7 +401,7 @@ bool StepUpPlanner::Solver::solve(const StepUpPlanner::State &initialState, cons
         const casadi::DM& refPos = references.desiredState().position();
 
         m_opti.set_initial(m_X(casadi::Slice(), 0), casadi::DM::vertcat({initPos, initVel}));
-        casadi::DM interpolatedPosition(3);
+        casadi::DM interpolatedPosition(3, 1);
 
         for (casadi_int k = 1; k < npoints + 1; ++k) {
             interpolatedPosition = initPos + m_linSpacedPoints(k) * (refPos - initPos);

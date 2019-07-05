@@ -47,7 +47,7 @@ int main() {
     StepUpPlanner::Settings settings;
 
     settings.phaseLength() = 30;
-    settings.solverVerbosity() = 11;
+    settings.solverVerbosity() = 6;
     settings.setMaximumLegLength(1.2);
     settings.setIpoptLinearSolver("ma27");
     settings.setFinalStateAnticipation(0.3);
@@ -67,5 +67,32 @@ int main() {
     weights.durationsDifference = 1.0;
 
     StepUpPlanner::Solver solver(phases, settings);
+
+    StepUpPlanner::State initialState;
+    initialState.setPosition(0.0, 0.0, 1.16);
+    initialState.setVelocity(0.0, 0.0, 0.0);
+
+    StepUpPlanner::References references;
+    references.zero();
+    references.desiredState().setPosition(0.6, 0.0, 1.56);
+    references.desiredState().setVelocity(0.0, 0.0, 0.0);
+
+    references.desiredControl().zero();
+    double desiredLeftMultiplier = static_cast<double>(9.81/(2.0*(references.desiredState().position()(2) - l2.position()(2))));
+    references.desiredControl().left().setMultiplier(desiredLeftMultiplier);
+    double desiredRightMultiplier = static_cast<double>(9.81/(2.0*(references.desiredState().position()(2) - r2.position()(2))));
+    references.desiredControl().right().setMultiplier(desiredRightMultiplier);
+
+    bool ok = references.setDesiredLegLength(1.18);
+    ASSERT_IS_TRUE(ok);
+
+    ok = solver.solve(initialState, references);
+
+    //solve once
+
+    //solve twice
+
+    //reset and test the three phases
+
 
 }
