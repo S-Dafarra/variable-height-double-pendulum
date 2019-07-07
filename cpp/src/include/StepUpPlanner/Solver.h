@@ -23,7 +23,7 @@ class StepUpPlanner::Solver {
         StepUpPlanner::Phase phase;
         SideDependentObject<bool> isActive;
         SideDependentObject<casadi::Function> feetConstraints;
-        SideDependentObject<casadi::MX> feetConstraintsBounds;
+        SideDependentObject<casadi::DM> feetConstraintsBounds;
         casadi::Function accelerationConsistencyConstraint;
         SideDependentObject<casadi::MX> feetLocationParameter;
         casadi::MX minDurationParameter, maxDurationParameter;
@@ -58,7 +58,7 @@ class StepUpPlanner::Solver {
     casadi::Function getIntegratorDynamics();
 
     void createFeetConstraintsFunction(const std::string& name, const StepUpPlanner::Step& step,
-                                       casadi::Function &outputFunction, casadi::MX &outputBounds);
+                                       casadi::Function &outputFunction, casadi::DM &outputBounds);
 
     casadi::Function getAccelerationConsistencyConstraintFunction(const std::string &name, const StepUpPlanner::SideDependentObject<bool> &isActive);
 

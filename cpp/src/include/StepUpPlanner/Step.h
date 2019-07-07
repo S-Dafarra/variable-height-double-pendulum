@@ -20,7 +20,7 @@ class StepUpPlanner::Step {
     std::vector<StepUpPlanner::Vertex> m_footVertices;
     std::vector<casadi::MX> m_edgeConstraints;
 
-    casadi::MX m_copBounds;
+    casadi::DM m_copBounds;
     casadi::Function m_copConstraints;
 
     bool computeCoPConstraints(const std::vector<StepUpPlanner::Vertex>& vertices);
@@ -43,7 +43,7 @@ public:
 
     const casadi::DM &position() const;
 
-    casadi::MX getCoPBounds() const;
+    casadi::DM getCoPBounds() const;
 
     casadi::Function getCoPConstraintsFunction() const;
 

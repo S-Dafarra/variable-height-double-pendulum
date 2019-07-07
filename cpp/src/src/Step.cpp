@@ -15,7 +15,7 @@ bool StepUpPlanner::Step::computeCoPConstraints(const std::vector<Vertex> &verti
     }
 
     m_edgeConstraints.resize(vertices.size(), casadi::MX(1));
-    m_copBounds = casadi::MX(static_cast<casadi_int>(vertices.size()), 1);
+    m_copBounds = casadi::DM(static_cast<casadi_int>(vertices.size()), 1);
 
     casadi::MX cop(2, 1);
     double xMultiplier, yMultiplier;
@@ -109,7 +109,7 @@ const casadi::DM &StepUpPlanner::Step::position() const
     return m_position;
 }
 
-casadi::MX StepUpPlanner::Step::getCoPBounds() const
+casadi::DM StepUpPlanner::Step::getCoPBounds() const
 {
     return m_copBounds;
 }
@@ -124,6 +124,6 @@ void StepUpPlanner::Step::clear()
     setPosition(0.0, 0.0, 0.0);
     m_footVertices.clear();
     m_edgeConstraints.clear();
-    m_copBounds = casadi::MX();
+    m_copBounds = casadi::DM();
     m_copConstraints = casadi::Function();
 }
