@@ -11,7 +11,8 @@ set(${LIBRARY_TARGET_NAME}_SRC
         src/Solver.cpp
         src/State.cpp
         src/Step.cpp
-        src/Rotation.cpp
+	src/Rotation.cpp
+        src/Plotter.cpp
 )
 
 # List of HPP (header) library files.
@@ -27,6 +28,7 @@ set(${LIBRARY_TARGET_NAME}_HDR
         include/StepUpPlanner/State.h
         include/StepUpPlanner/Step.h
         include/StepUpPlanner/Rotation.h
+        include/StepUpPlanner/Plotter.h
 )
 
 add_library(${LIBRARY_TARGET_NAME} ${${LIBRARY_TARGET_NAME}_SRC} ${${LIBRARY_TARGET_NAME}_HDR})
@@ -38,6 +40,8 @@ set_target_properties(${LIBRARY_TARGET_NAME} PROPERTIES VERSION       ${${PROJEC
 
 target_include_directories(${LIBRARY_TARGET_NAME} PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
                                                          "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>")
+
+target_link_libraries(${LIBRARY_TARGET_NAME} PRIVATE ${PROJECT_NAME}_matplotlibcpp)
 
 target_link_libraries(${LIBRARY_TARGET_NAME} PUBLIC casadi)
 # If you used find_package() you need to use target_include_directories() and/or

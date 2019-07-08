@@ -1,4 +1,5 @@
 #include <StepUpPlanner/Solver.h>
+#include <StepUpPlanner/Plotter.h>
 #include <cassert>
 
 #define ASSERT_IS_TRUE(prop) assertTrue(prop,__FILE__,__LINE__)
@@ -96,6 +97,11 @@ int main() {
 
     ok = solver.getFullSolution(phases);
     ASSERT_IS_TRUE(ok);
+
+
+    StepUpPlanner::Plotter plotter;
+
+    plotter.plotFullSolutionBlocking(phases);
 
     ok = solver.solve(initialState, references);
     ASSERT_IS_TRUE(ok);
