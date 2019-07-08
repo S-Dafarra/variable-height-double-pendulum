@@ -25,6 +25,8 @@ public:
 
     const casadi::DM &cop() const;
 
+    double cop(size_t i) const;
+
     void setCoP(double copX, double copY);
 
     casadi::DM &multiplier();
@@ -50,6 +52,8 @@ public:
     const casadi::DM& acceleration() const;
 
     casadi::DM& acceleration();
+
+    double acceleration(size_t i) const;
 
     StepUpPlanner::FootControl &left();
 

@@ -24,9 +24,13 @@ public:
 
     casadi::DM& position();
 
+    double position(size_t i) const;
+
     const casadi::DM& position() const;
 
     casadi::DM& velocity();
+
+    double velocity(size_t i) const;
 
     const casadi::DM& velocity() const;
 

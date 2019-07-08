@@ -1,4 +1,5 @@
 #include <StepUpPlanner/State.h>
+#include <cassert>
 
 StepUpPlanner::State::State()
     : m_position(3, 1)
@@ -27,6 +28,12 @@ casadi::DM &StepUpPlanner::State::position()
     return m_position;
 }
 
+double StepUpPlanner::State::position(size_t i) const
+{
+    assert(i < 3);
+    return static_cast<double>(m_position(i));
+}
+
 const casadi::DM &StepUpPlanner::State::position() const
 {
     return m_position;
@@ -35,6 +42,12 @@ const casadi::DM &StepUpPlanner::State::position() const
 casadi::DM &StepUpPlanner::State::velocity()
 {
     return  m_velocity;
+}
+
+double StepUpPlanner::State::velocity(size_t i) const
+{
+    assert(i < 3);
+    return static_cast<double>(m_velocity(i));
 }
 
 const casadi::DM &StepUpPlanner::State::velocity() const

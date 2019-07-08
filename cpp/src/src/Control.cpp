@@ -1,4 +1,5 @@
 #include <StepUpPlanner/Control.h>
+#include <cassert>
 
 StepUpPlanner::FootControl::FootControl()
     : m_multiplier(1,1)
@@ -16,6 +17,12 @@ casadi::DM &StepUpPlanner::FootControl::cop()
 const casadi::DM &StepUpPlanner::FootControl::cop() const
 {
     return m_CoP;
+}
+
+double StepUpPlanner::FootControl::cop(size_t i) const
+{
+    assert(i < 2);
+    return static_cast<double>(m_CoP(i));
 }
 
 void StepUpPlanner::FootControl::setCoP(double copX, double copY)
@@ -62,6 +69,12 @@ const casadi::DM &StepUpPlanner::Control::acceleration() const
 casadi::DM &StepUpPlanner::Control::acceleration()
 {
     return m_acceleration;
+}
+
+double StepUpPlanner::Control::acceleration(size_t i) const
+{
+    assert(i < 3);
+    return static_cast<double>(m_acceleration(i));
 }
 
 StepUpPlanner::FootControl &StepUpPlanner::Control::left()
