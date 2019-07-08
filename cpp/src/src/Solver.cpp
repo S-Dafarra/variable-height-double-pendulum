@@ -33,7 +33,7 @@ void StepUpPlanner::Solver::createFeetConstraintsFunction(const std::string &nam
                                                                                     // while the upperbound is 0, they don't play a role
 
 
-    casadi::DM frictionBounds = casadi::DM::zeros(1,1);
+    casadi::DM frictionBounds = casadi::DM::zeros(3,1);
     casadi::MX A = casadi::MX::horzcat({-footCoP(1), footCoP(0), 0});
     casadi::MX B = casadi::MX::horzcat({0, 0, m_settings.getTorsionalFrictionCoefficient()});
     double staticFriction = m_settings.getStaticFrictionCoefficient();
@@ -53,15 +53,15 @@ void StepUpPlanner::Solver::createFeetConstraintsFunction(const std::string &nam
 
     if (copConstraintsFcn.is_null()) {
 
-        outputBounds = casadi::DM::vertcat({/*frictionBounds, */0, legLength * legLength});
+        outputBounds = casadi::DM::vertcat({frictionBounds, 0, legLength * legLength});
 
-        outputFunction = casadi::Function(name, {state, footControl, footLocation}, {/*frictionExpressions,*/
+        outputFunction = casadi::Function(name, {state, footControl, footLocation}, {frictionExpressions,
                                                                                      multiplierPositivityExpression, legLengthExpression});
 
     } else {
         casadi::MX copConstraintsExpressions = casadi::MX::vertcat(copConstraintsFcn(footCoP));
-        outputBounds = casadi::DM::vertcat({/*frictionBounds, */step.getCoPBounds(), 0, legLength * legLength});
-        outputFunction = casadi::Function(name, {state, footControl, footLocation}, {/*frictionExpressions, */copConstraintsExpressions,
+        outputBounds = casadi::DM::vertcat({frictionBounds, step.getCoPBounds(), 0, legLength * legLength});
+        outputFunction = casadi::Function(name, {state, footControl, footLocation}, {frictionExpressions, copConstraintsExpressions,
                                                                                      multiplierPositivityExpression, legLengthExpression});
 
     }
@@ -190,7 +190,7 @@ void StepUpPlanner::Solver::setupOpti()
         casadi::Function accelerationConstraint = m_phases[castedPhase].accelerationConsistencyConstraint;
 
 
-        for (casadi_int k = 0; k < phaseLength; ++k) {
+        for (casadi_int k = 0 + phaseLength * phase; k < phaseLength * (phase + 1); ++k) {
             m_opti.subject_to(m_X(Sl(), k + 1) == casadi::MX::vertcat(m_integratorDynamics({m_X(Sl(), k), m_A(Sl(), k), dT})));
 
             if (leftIsActive) {
@@ -415,6 +415,7 @@ bool StepUpPlanner::Solver::solve(const StepUpPlanner::State &initialState, cons
     try {
         m_solution = std::make_unique<casadi::OptiSol>(m_opti.solve());
     } catch (std::exception &e) {
+        m_opti.debug().show_infeasibilities(1e-5);
         std::cerr << "[StepUpPlanner::Solver::solve] Error while solving the optimization problem." << std::endl;
         std::cerr << "Details: " << e.what() << std::endl;
         return false;
