@@ -1,3 +1,7 @@
+
+#ifndef MATPLOTLIBCCP
+#define MATPLOTLIBCCP
+
 #pragma once
 
 #include <vector>
@@ -11,6 +15,8 @@
 #include <functional>
 
 #include <Python.h>
+
+#define WITHOUT_NUMPY //Numpy is not needed
 
 #ifndef WITHOUT_NUMPY
 #  define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
@@ -215,7 +221,7 @@ private:
     }
 
     ~_interpreter() {
-        Py_Finalize();
+        //Py_Finalize(); //Commented out this line as it seems that there is an incompatibility with casadi
     }
 };
 
@@ -1205,14 +1211,14 @@ void xlim(Numeric left, Numeric right)
 }
 
 
-inline double* xlim()
+inline std::vector<double> xlim()
 {
     PyObject* args = PyTuple_New(0);
     PyObject* res = PyObject_CallObject(detail::_interpreter::get().s_python_function_xlim, args);
     PyObject* left = PyTuple_GetItem(res,0);
     PyObject* right = PyTuple_GetItem(res,1);
 
-    double* arr = new double[2];
+    std::vector<double> arr(2);
     arr[0] = PyFloat_AsDouble(left);
     arr[1] = PyFloat_AsDouble(right);
 
@@ -1223,14 +1229,14 @@ inline double* xlim()
 }
 
 
-inline double* ylim()
+inline std::vector<double> ylim()
 {
     PyObject* args = PyTuple_New(0);
     PyObject* res = PyObject_CallObject(detail::_interpreter::get().s_python_function_ylim, args);
     PyObject* left = PyTuple_GetItem(res,0);
     PyObject* right = PyTuple_GetItem(res,1);
 
-    double* arr = new double[2];
+    std::vector<double> arr(2);
     arr[0] = PyFloat_AsDouble(left);
     arr[1] = PyFloat_AsDouble(right);
 
@@ -1837,3 +1843,5 @@ private:
 };
 
 } // end namespace matplotlibcpp
+
+#endif

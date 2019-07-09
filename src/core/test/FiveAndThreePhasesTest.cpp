@@ -101,13 +101,21 @@ int main() {
 
     StepUpPlanner::Plotter plotter;
 
-    plotter.plotFullSolutionBlocking(phases);
+    plotter.plotFullSolution(phases);
 
     ok = solver.solve(initialState, references);
     ASSERT_IS_TRUE(ok);
 
     ok = solver.getFullSolution(phases);
     ASSERT_IS_TRUE(ok);
+
+    plotter.plotFullSolution(phases);
+
+    std::cerr << "Press a button to close figures..." << std::endl;
+    getchar();
+    std::cerr << "Closing figs." << std::endl;
+
+    plotter.closeAll();
 
     //reset and test the three phases
 

@@ -56,7 +56,11 @@ public:
 
     ~Plotter();
 
+    void plotFullSolution(const std::vector<StepUpPlanner::Phase>& phases);
+
     void plotFullSolutionBlocking(const std::vector<StepUpPlanner::Phase>& phases);
+
+    void closeAll();
 
 };
 

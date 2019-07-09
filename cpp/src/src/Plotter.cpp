@@ -159,6 +159,8 @@ void StepUpPlanner::Plotter::plot(const std::string &name, StepUpPlanner::Plot &
 
     plot.figureNumber() = plt::figure(plot.figureNumber());
 
+    plt::clf();
+
     for (auto& element : plot.data()) {
         plt::named_plot(element.first, m_time, element.second);
     }
@@ -168,14 +170,13 @@ void StepUpPlanner::Plotter::plot(const std::string &name, StepUpPlanner::Plot &
     plt::xlabel(plot.xLabel());
     plt::ylabel(plot.yLabel());
 
-    double yMin = plt::ylim()[0];
-    double yMax = plt::ylim()[1];
+    std::vector<double> lim = plt::ylim();
 
     for (double& t : m_phaseTimings) {
-        plt::plot({t, t}, {yMin, yMax}, "k--");
+        plt::plot({t, t}, {lim[0], lim[1]}, "k--");
     }
 
-    plt::ylim(yMin, yMax);
+    plt::ylim(lim[0], lim[1]);
 
 }
 
@@ -194,10 +195,29 @@ StepUpPlanner::Plotter::Plotter()
 StepUpPlanner::Plotter::~Plotter()
 { }
 
+void StepUpPlanner::Plotter::plotFullSolution(const std::vector<StepUpPlanner::Phase> &phases)
+{
+    plotAll(phases);
+    matplotlibcpp::show(false);
+}
+
 void StepUpPlanner::Plotter::plotFullSolutionBlocking(const std::vector<Phase> &phases)
 {
     plotAll(phases);
     matplotlibcpp::show(true);
 
+}
+
+void StepUpPlanner::Plotter::closeAll()
+{
+    namespace plt = matplotlibcpp;
+
+    for (auto& plot : m_plots) {
+        if (plot.second.figureNumber() >= 0) {
+            plt::figure(plot.second.figureNumber());
+            plt::close();
+            plot.second.figureNumber() = -1;
+        }
+    }
 }
 
