@@ -37,12 +37,12 @@ std::vector<double> &StepUpPlanner::Plot::operator[](const std::string &key)
     return m_data[key];
 }
 
-std::unordered_map<std::string, std::vector<double> > &StepUpPlanner::Plot::data()
+std::map<std::string, std::vector<double> > &StepUpPlanner::Plot::data()
 {
     return m_data;
 }
 
-const std::unordered_map<std::string, std::vector<double> > &StepUpPlanner::Plot::data() const
+const std::map<std::string, std::vector<double> > &StepUpPlanner::Plot::data() const
 {
     return m_data;
 }
@@ -125,8 +125,8 @@ void StepUpPlanner::Plotter::fillPlotsData(const std::vector<StepUpPlanner::Phas
                         {return phases[i / phaseLength].controls()[i % phaseLength].acceleration(j);},
                         m_plots["CoM Acceleration (without gravity)"]);
 
-    m_plots["CoM Velocity"].xLabel() = "t [s]";
-    m_plots["CoM Velocity"].yLabel() = "[m/s^2]";
+    m_plots["CoM Acceleration (without gravity)"].xLabel() = "t [s]";
+    m_plots["CoM Acceleration (without gravity)"].yLabel() = "[m/s^2]";
 
     ResizeAndFillVector(n, [phases, phaseLength](size_t i)
                         {return static_cast<double>(phases[i / phaseLength].controls()[i % phaseLength].left().multiplier());},

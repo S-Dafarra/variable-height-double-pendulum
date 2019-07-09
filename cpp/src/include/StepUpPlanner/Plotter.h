@@ -3,7 +3,7 @@
 
 #include <StepUpPlanner/Phase.h>
 #include <vector>
-#include <unordered_map>
+#include <map>
 #include <string>
 
 namespace StepUpPlanner {
@@ -12,7 +12,7 @@ namespace StepUpPlanner {
 }
 
 class StepUpPlanner::Plot {
-    std::unordered_map<std::string, std::vector<double>> m_data;
+    std::map<std::string, std::vector<double>> m_data;
     long m_figureNumber;
     std::string m_xLabel, m_yLabel;
 
@@ -22,9 +22,9 @@ public:
 
     std::vector<double>& operator[](const std::string& key);
 
-    std::unordered_map<std::string, std::vector<double>>& data();
+    std::map<std::string, std::vector<double>>& data();
 
-    const std::unordered_map<std::string, std::vector<double>>& data() const;
+    const std::map<std::string, std::vector<double>>& data() const;
 
     long& figureNumber();
 
@@ -35,7 +35,7 @@ public:
 
 class StepUpPlanner::Plotter {
 
-    std::unordered_map<std::string, StepUpPlanner::Plot> m_plots;
+    std::map<std::string, StepUpPlanner::Plot> m_plots;
 
     std::vector<double> m_time;
     std::vector<double> m_phaseTimings;
