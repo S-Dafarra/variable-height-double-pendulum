@@ -101,7 +101,6 @@ int main() {
 
     StepUpPlanner::Plotter plotter;
 
-    plotter.plotFullSolution(phases);
 
     ok = solver.solve(initialState, references);
     ASSERT_IS_TRUE(ok);
@@ -111,10 +110,9 @@ int main() {
 
     plotter.plotFullSolution(phases);
 
-    std::cerr << "Press a button to close figures..." << std::endl;
+    std::cerr << "Press a button to continue..." << std::endl;
     getchar();
     std::cerr << "Closing figs." << std::endl;
-
     plotter.closeAll();
 
     //reset and test the three phases
@@ -152,6 +150,13 @@ int main() {
     ok = solver.getFullSolution(phases);
     ASSERT_IS_TRUE(ok);
 
+    plotter.plotFullSolution(phases);
+
+    std::cerr << "Press a button to close figures..." << std::endl;
+    getchar();
+    std::cerr << "Closing figs." << std::endl;
+
+    plotter.closeAll();
 
     return EXIT_SUCCESS;
 }
