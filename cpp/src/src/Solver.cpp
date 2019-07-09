@@ -402,7 +402,7 @@ bool StepUpPlanner::Solver::solve(const StepUpPlanner::State &initialState, cons
 
         for (casadi_int k = 1; k < npoints + 1; ++k) {
             interpolatedPosition = initPos + m_linSpacedPoints(k) * (refPos - initPos);
-            m_opti.set_initial(m_X(casadi::Slice(2), k), interpolatedPosition(2));
+            m_opti.set_initial(m_X(casadi::Slice(0,3), k), interpolatedPosition);
         }
     }
 

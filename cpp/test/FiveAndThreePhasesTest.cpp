@@ -42,7 +42,11 @@ int main() {
                                                 StepUpPlanner::Phase(&l2, nullptr),
                                                 StepUpPlanner::Phase(&l2, &r2)};
 
-
+    phases[0].setDurationSettings(0.5, 2.0, 0.8);
+    phases[1].setDurationSettings(0.5, 2.0, 1.2);
+    phases[2].setDurationSettings(0.5, 2.0, 0.8);
+    phases[3].setDurationSettings(0.5, 2.0, 1.2);
+    phases[4].setDurationSettings(0.5, 2.0, 0.8);
 
     StepUpPlanner::Settings settings;
 
@@ -103,6 +107,10 @@ int main() {
     phases = {StepUpPlanner::Phase(nullptr, &r1),
               StepUpPlanner::Phase(&l2, &r1),
               StepUpPlanner::Phase(&l2, nullptr)};
+
+    phases[0].setDurationSettings(0.5, 2.0, 1.2);
+    phases[1].setDurationSettings(0.5, 2.0, 0.8);
+    phases[2].setDurationSettings(0.5, 2.0, 1.2);
 
     initialState.zero();
     initialState.setPosition(0.0, -0.08, 1.16);
