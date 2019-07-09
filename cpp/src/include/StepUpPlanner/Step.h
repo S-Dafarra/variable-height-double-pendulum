@@ -18,7 +18,7 @@ class StepUpPlanner::Step {
 
     casadi::DM m_position;
     std::vector<StepUpPlanner::Vertex> m_footVertices;
-    std::vector<casadi::MX> m_edgeConstraints;
+    casadi::MX m_edgeConstraints;
 
     casadi::DM m_copBounds;
     casadi::Function m_copConstraints;

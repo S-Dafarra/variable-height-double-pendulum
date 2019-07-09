@@ -14,10 +14,10 @@ bool StepUpPlanner::Step::computeCoPConstraints(const std::vector<Vertex> &verti
         return false;
     }
 
-    m_edgeConstraints.resize(vertices.size(), casadi::MX(1));
+    m_edgeConstraints = casadi::MX(static_cast<casadi_int>(vertices.size()), 1);
     m_copBounds = casadi::DM(static_cast<casadi_int>(vertices.size()), 1);
 
-    casadi::MX cop(2, 1);
+    casadi::MX cop = casadi::MX::sym("cop", 2, 1);
     double xMultiplier, yMultiplier;
     double bound;
 
@@ -25,10 +25,25 @@ bool StepUpPlanner::Step::computeCoPConstraints(const std::vector<Vertex> &verti
     size_t nextIndex = 1;
     for (size_t i = 0; i < vertices.size(); ++i) {
 
-        xMultiplier = (vertices[i].y - vertices[previousIndex].y) / (vertices[i].x - vertices[previousIndex].x);
-        yMultiplier = -1;
-        bound = -vertices[previousIndex].y + vertices[previousIndex].x * (vertices[i].y - vertices[previousIndex].y) /
-                (vertices[i].x - vertices[previousIndex].x);
+        if (std::abs(vertices[i].y - vertices[previousIndex].y) < 1e-8 && std::abs(vertices[i].x - vertices[previousIndex].x) < 1e-8) {
+            std::cerr << "[StepUpPlanner::Step::computeCoPConstraints] Vertex " << i << " and " << previousIndex;
+            std::cerr << "seem to be coincident." << std::endl;
+            m_copConstraints = casadi::Function();
+            return false;
+        }
+
+        if (std::abs(vertices[i].x - vertices[previousIndex].x) > std::abs(vertices[i].y - vertices[previousIndex].y)) {
+            xMultiplier = (vertices[i].y - vertices[previousIndex].y) / (vertices[i].x - vertices[previousIndex].x);
+            yMultiplier = -1;
+            bound = -vertices[previousIndex].y + vertices[previousIndex].x * (vertices[i].y - vertices[previousIndex].y) /
+                    (vertices[i].x - vertices[previousIndex].x);
+        } else {
+            xMultiplier = -1;
+            yMultiplier = (vertices[i].x - vertices[previousIndex].x) / (vertices[i].y - vertices[previousIndex].y);
+            bound = -vertices[previousIndex].x + vertices[previousIndex].y * (vertices[i].x - vertices[previousIndex].x) /
+                    (vertices[i].y - vertices[previousIndex].y);
+        }
+
 
         double nextPointValue = xMultiplier * vertices [nextIndex].x + yMultiplier * vertices [nextIndex].y;
         if (std::abs(nextPointValue - bound) < 1e-8) {
@@ -40,10 +55,10 @@ bool StepUpPlanner::Step::computeCoPConstraints(const std::vector<Vertex> &verti
 
         //To understand the sign of the inequality, check in which half plane the next vertex lies.
         if (nextPointValue < bound) {
-            m_edgeConstraints[i] = xMultiplier * cop(0) + yMultiplier * cop(1);
+            m_edgeConstraints(i) = xMultiplier * cop(0) + yMultiplier * cop(1);
             m_copBounds(i) = bound;
         } else {
-            m_edgeConstraints[i] = -xMultiplier * cop(0) - yMultiplier * cop(1);
+            m_edgeConstraints(i) = -xMultiplier * cop(0) - yMultiplier * cop(1);
             m_copBounds(i) = -bound;
         }
 
@@ -54,7 +69,7 @@ bool StepUpPlanner::Step::computeCoPConstraints(const std::vector<Vertex> &verti
         }
     }
 
-    m_copConstraints = casadi::Function("CoPConstraints", {cop}, m_edgeConstraints);
+    m_copConstraints = casadi::Function("CoPConstraints", {cop}, {m_edgeConstraints});
 
     assert(!m_copConstraints.is_null());
 
@@ -123,7 +138,7 @@ void StepUpPlanner::Step::clear()
 {
     setPosition(0.0, 0.0, 0.0);
     m_footVertices.clear();
-    m_edgeConstraints.clear();
+    m_edgeConstraints = casadi::MX();
     m_copBounds = casadi::DM();
     m_copConstraints = casadi::Function();
 }

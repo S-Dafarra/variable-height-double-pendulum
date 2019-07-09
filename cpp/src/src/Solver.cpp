@@ -63,7 +63,6 @@ void StepUpPlanner::Solver::createFeetConstraintsFunction(const std::string &nam
         outputBounds = casadi::DM::vertcat({frictionBounds, step.getCoPBounds(), 0, legLength * legLength});
         outputFunction = casadi::Function(name, {state, footControl, footLocation}, {frictionExpressions, copConstraintsExpressions,
                                                                                      multiplierPositivityExpression, legLengthExpression});
-
     }
 }
 

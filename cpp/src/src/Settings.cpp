@@ -34,7 +34,7 @@ double StepUpPlanner::Settings::getMaximMaximumLegLength() const
 
 bool StepUpPlanner::Settings::setStaticFrictionCoefficient(double staticFrictionCoeff)
 {
-    if (staticFrictionCoeff <= 0) {
+    if (staticFrictionCoeff < 0) {
         std::cerr << "[StepUpPlanner::Settings::setStaticFrictionCoefficient] The staticFrictionCoeff is supposed to be a positive number." << std::endl;
         return false;
     }
@@ -51,7 +51,7 @@ double StepUpPlanner::Settings::getStaticFrictionCoefficient() const
 
 bool StepUpPlanner::Settings::setTorsionalFrictionCoefficient(double torsionalFrictionCoeff)
 {
-    if (torsionalFrictionCoeff <= 0) {
+    if (torsionalFrictionCoeff < 0) {
         std::cerr << "[StepUpPlanner::Settings::setTorsionalFrictionCoefficient] The torsionalFrictionCoeff is supposed to be a positive number." << std::endl;
         return false;
     }
