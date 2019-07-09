@@ -47,7 +47,7 @@ int main() {
     StepUpPlanner::Settings settings;
 
     settings.phaseLength() = 30;
-    settings.solverVerbosity() = 6;
+    settings.solverVerbosity() = 1;
     settings.setMaximumLegLength(1.2);
     settings.setIpoptLinearSolver("ma27");
     settings.setFinalStateAnticipation(0.3);
@@ -64,7 +64,7 @@ int main() {
     weights.maxMultiplier = 0.1;
     weights.finalStateError = 10;
     weights.controlVariations = 1.0/N;
-    weights.durationsDifference = 1.0;
+    weights.durationsDifference = 5.0/phases.size();
 
     StepUpPlanner::Solver solver(phases, settings);
 
@@ -87,10 +87,16 @@ int main() {
     ASSERT_IS_TRUE(ok);
 
     ok = solver.solve(initialState, references);
+    ASSERT_IS_TRUE(ok);
 
-    //solve once
+    ok = solver.getFullSolution(phases);
+    ASSERT_IS_TRUE(ok);
 
-    //solve twice
+    ok = solver.solve(initialState, references);
+    ASSERT_IS_TRUE(ok);
+
+    ok = solver.getFullSolution(phases);
+    ASSERT_IS_TRUE(ok);
 
     //reset and test the three phases
 

@@ -271,7 +271,6 @@ bool StepUpPlanner::Solver::setupProblem(const std::vector<StepUpPlanner::Phase>
         casadiOptions["print_time"] = false;
     }
     ipoptOptions["linear_solver"] = m_settings.getIpoptLinearSolver();
-    ipoptOptions["mu_strategy"] = "adaptive";
 
     m_opti.solver("ipopt", casadiOptions, ipoptOptions);
 
@@ -403,7 +402,7 @@ bool StepUpPlanner::Solver::solve(const StepUpPlanner::State &initialState, cons
 
         for (casadi_int k = 1; k < npoints + 1; ++k) {
             interpolatedPosition = initPos + m_linSpacedPoints(k) * (refPos - initPos);
-            m_opti.set_initial(m_X(casadi::Slice(0, 3), k), interpolatedPosition);
+            m_opti.set_initial(m_X(casadi::Slice(2), k), interpolatedPosition(2));
         }
     }
 
