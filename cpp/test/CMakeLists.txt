@@ -29,5 +29,5 @@ macro(add_sup_test classname)
     endif()
 endmacro()
 
-add_sup_test(FivePhases)
+add_sup_test(FiveAndThreePhases)
 

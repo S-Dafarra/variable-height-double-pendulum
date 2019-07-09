@@ -100,5 +100,35 @@ int main() {
 
     //reset and test the three phases
 
+    phases = {StepUpPlanner::Phase(nullptr, &r1),
+              StepUpPlanner::Phase(&l2, &r1),
+              StepUpPlanner::Phase(&l2, nullptr)};
+
+    initialState.zero();
+    initialState.setPosition(0.0, -0.08, 1.16);
+    initialState.setVelocity(0.1, -0.05, 0.0);
+    references.desiredState().setPosition(0.6, 0.0, 1.56);
+    references.desiredState().setVelocity(0.0, 0.0, 0.0);
+
+    references.desiredControl().zero();
+    desiredLeftMultiplier = static_cast<double>(9.81/((references.desiredState().position()(2) - l2.position()(2))));
+    references.desiredControl().left().setMultiplier(desiredLeftMultiplier);
+
+    ok = solver.resetProblem(phases, settings);
+    ASSERT_IS_TRUE(ok);
+
+    ok = solver.solve(initialState, references);
+    ASSERT_IS_TRUE(ok);
+
+    ok = solver.getFullSolution(phases);
+    ASSERT_IS_TRUE(ok);
+
+    ok = solver.solve(initialState, references);
+    ASSERT_IS_TRUE(ok);
+
+    ok = solver.getFullSolution(phases);
+    ASSERT_IS_TRUE(ok);
+
+
 
 }
