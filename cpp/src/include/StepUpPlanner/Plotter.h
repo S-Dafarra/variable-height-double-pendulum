@@ -38,6 +38,7 @@ class StepUpPlanner::Plotter {
     std::unordered_map<std::string, StepUpPlanner::Plot> m_plots;
 
     std::vector<double> m_time;
+    std::vector<double> m_phaseTimings;
 
     size_t getNumberOfPoints(const std::vector<StepUpPlanner::Phase>& phases);
 

@@ -76,13 +76,18 @@ size_t StepUpPlanner::Plotter::getNumberOfPoints(const std::vector<StepUpPlanner
 void StepUpPlanner::Plotter::setTimeVector(const std::vector<StepUpPlanner::Phase> &phases)
 {
     m_time.resize(getNumberOfPoints(phases));
+    m_phaseTimings.resize(phases.size());
 
     size_t index = 0;
     double previousTime = 0.0;
+    double previousPhaseTime = 0.0;
 
-    for (const StepUpPlanner::Phase& phase : phases) {
-
+    for (size_t p =0; p < phases.size(); ++p) {
+        const StepUpPlanner::Phase& phase = phases[p];
         double dT = static_cast<double>(phase.duration()) / phase.states().size();
+
+        m_phaseTimings[p] = previousPhaseTime + static_cast<double>(phase.duration());
+        previousPhaseTime = m_phaseTimings[p];
 
         for (size_t i = 0; i < phase.states().size(); ++i) {
             m_time[index] = previousTime + dT;
@@ -162,6 +167,16 @@ void StepUpPlanner::Plotter::plot(const std::string &name, StepUpPlanner::Plot &
     plt::legend();
     plt::xlabel(plot.xLabel());
     plt::ylabel(plot.yLabel());
+
+    double yMin = plt::ylim()[0];
+    double yMax = plt::ylim()[1];
+
+    for (double& t : m_phaseTimings) {
+        plt::plot({t, t}, {yMin, yMax}, "k--");
+    }
+
+    plt::ylim(yMin, yMax);
+
 }
 
 void StepUpPlanner::Plotter::plotAll(const std::vector<Phase> &phases)
