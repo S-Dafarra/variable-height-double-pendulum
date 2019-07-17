@@ -1,5 +1,5 @@
 
 *.m~
-*/build
+*build
 *.user
 *.autosave
