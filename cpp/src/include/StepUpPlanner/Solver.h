@@ -26,6 +26,7 @@ class StepUpPlanner::Solver {
         SideDependentObject<casadi::DM> feetConstraintsBounds;
         casadi::Function accelerationConsistencyConstraint;
         SideDependentObject<casadi::MX> feetLocationParameter;
+        SideDependentObject<casadi::MX> feetOrientationParameter;
         casadi::MX minDurationParameter, maxDurationParameter;
     };
 

@@ -24,13 +24,14 @@ void StepUpPlanner::Solver::createFeetConstraintsFunction(const std::string &nam
     casadi::MX footLocation = casadi::MX::sym("pFoot", 3);
     casadi::MX footControl = casadi::MX::sym("foot_control", 3);
     casadi::MX state = casadi::MX::sym("state", 6);
+    casadi::MX footOrientation = casadi::MX::sym("Rfoot", 3, 3);
 
     casadi::MX currentPosition = state(casadi::Slice(0,3));
     casadi::MX footCoP = footControl(casadi::Slice(0,2));
     casadi::MX u = footControl(2);
-    casadi::MX footCoPInWorld = casadi::MX::vertcat({footCoP, 0});
-    casadi::MX forceDividedByMassAndU = (currentPosition - (footLocation + footCoPInWorld)); //Being the mass and u positive quantities,
-                                                                                    // while the upperbound is 0, they don't play a role
+    casadi::MX footCoPInWorld = casadi::MX::mtimes(footOrientation, casadi::MX::vertcat({footCoP, 0}));
+    casadi::MX forceDividedByMassAndU = casadi::MX::mtimes(footOrientation.T(), (currentPosition - (footLocation + footCoPInWorld)));
+    //Being the mass and u positive quantities, they don't play a role
 
 
     casadi::DM frictionBounds = casadi::DM::zeros(3,1);
@@ -61,8 +62,9 @@ void StepUpPlanner::Solver::createFeetConstraintsFunction(const std::string &nam
     } else {
         casadi::MX copConstraintsExpressions = casadi::MX::vertcat(copConstraintsFcn(footCoP));
         outputBounds = casadi::DM::vertcat({frictionBounds, step.getCoPBounds(), 0, legLength * legLength});
-        outputFunction = casadi::Function(name, {state, footControl, footLocation}, {frictionExpressions, copConstraintsExpressions,
-                                                                                     multiplierPositivityExpression, legLengthExpression});
+        outputFunction = casadi::Function(name, {state, footControl, footLocation, footOrientation},
+                                          {frictionExpressions, copConstraintsExpressions,
+                                           multiplierPositivityExpression, legLengthExpression});
     }
 }
 
@@ -74,15 +76,17 @@ casadi::Function StepUpPlanner::Solver::getAccelerationConsistencyConstraintFunc
     casadi::MX A = casadi::MX::sym("a", 3);
     casadi::MX currentPosition = X(casadi::Slice(0,3));
     casadi::MX leftLocation = casadi::MX::sym("leftLocation", 3);
+    casadi::MX leftRotation = casadi::MX::sym("leftRotation", 3, 3);
     casadi::MX rightLocation = casadi::MX::sym("rightLocation", 3);
+    casadi::MX rightRotation = casadi::MX::sym("rightRotation", 3, 3);
 
     casadi::MX footCoPL = U(casadi::Slice(0,2));
     casadi::MX ul = U(2);
-    casadi::MX leftCoPInWorld = casadi::MX::vertcat({footCoPL, 0});
+    casadi::MX leftCoPInWorld = casadi::MX::mtimes(leftRotation, casadi::MX::vertcat({footCoPL, 0}));
 
     casadi::MX footCoPR = U(casadi::Slice(3,5));
     casadi::MX ur = U(5);
-    casadi::MX rightCoPInWorld = casadi::MX::vertcat({footCoPR, 0});
+    casadi::MX rightCoPInWorld = casadi::MX::mtimes(rightRotation, casadi::MX::vertcat({footCoPR, 0}));
 
 
     casadi::MX constraint = A;
@@ -95,7 +99,7 @@ casadi::Function StepUpPlanner::Solver::getAccelerationConsistencyConstraintFunc
         constraint -= (currentPosition - (rightLocation + rightCoPInWorld)) * ur;
     }
 
-    return casadi::Function(name, {X, U, A, leftLocation, rightLocation}, {constraint});
+    return casadi::Function(name, {X, U, A, leftLocation, leftRotation, rightLocation, rightRotation}, {constraint});
 }
 
 bool StepUpPlanner::Solver::fillPhaseDataVector(const std::vector<Phase> &phases)
@@ -136,7 +140,9 @@ bool StepUpPlanner::Solver::fillPhaseDataVector(const std::vector<Phase> &phases
         }
 
         m_phases[i].feetLocationParameter.left  = m_opti.parameter(3);
+        m_phases[i].feetOrientationParameter.left = m_opti.parameter(3, 3);
         m_phases[i].feetLocationParameter.right = m_opti.parameter(3);
+        m_phases[i].feetOrientationParameter.right = m_opti.parameter(3, 3);
         m_phases[i].minDurationParameter = m_opti.parameter();
         m_phases[i].maxDurationParameter = m_opti.parameter();
 
@@ -181,10 +187,13 @@ void StepUpPlanner::Solver::setupOpti()
         casadi::Function& leftFootConstraints = m_phases[castedPhase].feetConstraints.left;
         casadi::DM& leftFootBounds = m_phases[castedPhase].feetConstraintsBounds.left;
         casadi::MX& leftPosition = m_phases[castedPhase].feetLocationParameter.left;
+        casadi::MX& leftRotation = m_phases[castedPhase].feetOrientationParameter.left;
 
         casadi::Function& rightFootConstraints = m_phases[castedPhase].feetConstraints.right;
         casadi::DM& rightFootBounds = m_phases[castedPhase].feetConstraintsBounds.right;
         casadi::MX& rightPosition = m_phases[castedPhase].feetLocationParameter.right;
+        casadi::MX& rightRotation = m_phases[castedPhase].feetOrientationParameter.right;
+
 
         casadi::Function accelerationConstraint = m_phases[castedPhase].accelerationConsistencyConstraint;
 
@@ -193,7 +202,7 @@ void StepUpPlanner::Solver::setupOpti()
             m_opti.subject_to(m_X(Sl(), k + 1) == casadi::MX::vertcat(m_integratorDynamics({m_X(Sl(), k), m_A(Sl(), k), dT})));
 
             if (leftIsActive) {
-                m_opti.subject_to(casadi::MX::vertcat(leftFootConstraints({m_X(Sl(), k + 1), m_U(Sl(0,3), k), leftPosition})) <= leftFootBounds);
+                m_opti.subject_to(casadi::MX::vertcat(leftFootConstraints({m_X(Sl(), k + 1), m_U(Sl(0,3), k), leftPosition, leftRotation})) <= leftFootBounds);
                 m_opti.subject_to(m_U(2, k) - m_uMax <= 0);
                 torquesCost += casadi::MX::pow(((m_X(2, k + 1) - leftPosition(2) - m_desiredLegLengthParameter) * m_U(2, k)), 2);
             } else {
@@ -201,7 +210,7 @@ void StepUpPlanner::Solver::setupOpti()
             }
 
             if (rightIsActive) {
-                m_opti.subject_to(casadi::MX::vertcat(rightFootConstraints({m_X(Sl(), k + 1), m_U(Sl(3,6), k), rightPosition})) <= rightFootBounds);
+                m_opti.subject_to(casadi::MX::vertcat(rightFootConstraints({m_X(Sl(), k + 1), m_U(Sl(3,6), k), rightPosition, rightRotation})) <= rightFootBounds);
                 m_opti.subject_to(m_U(5, k) - m_uMax <= 0);
                 torquesCost += casadi::MX::pow(((m_X(2, k + 1) - rightPosition(2) - m_desiredLegLengthParameter) * m_U(5, k)), 2);
             } else {
@@ -209,7 +218,8 @@ void StepUpPlanner::Solver::setupOpti()
             }
 
             m_opti.subject_to(casadi::MX::vertcat(accelerationConstraint({m_X(Sl(), k + 1), m_U(Sl(), k), m_A(Sl(), k),
-                                                                          leftPosition, rightPosition})) == casadi::DM::zeros(3,1));
+                                                                          leftPosition, leftRotation,
+                                                                          rightPosition, rightRotation})) == casadi::DM::zeros(3,1));
 
         }
     }
@@ -292,7 +302,9 @@ void StepUpPlanner::Solver::setParametersValue(const StepUpPlanner::State &initi
 
     for (size_t i = 0; i < m_phases.size(); ++i) {
         m_opti.set_value(m_phases[i].feetLocationParameter.left, m_phases[i].phase.leftPosition());
+        m_opti.set_value(m_phases[i].feetOrientationParameter.left, m_phases[i].phase.leftRotation().asMatrix());
         m_opti.set_value(m_phases[i].feetLocationParameter.right, m_phases[i].phase.rightPosition());
+        m_opti.set_value(m_phases[i].feetOrientationParameter.right, m_phases[i].phase.rightRotation().asMatrix());
         m_opti.set_value(m_phases[i].minDurationParameter, m_phases[i].phase.minDuration());
         m_opti.set_value(m_phases[i].maxDurationParameter, m_phases[i].phase.maxDuration());
         m_opti.set_value(m_referenceTimings(i), m_phases[i].phase.desiredDuration());

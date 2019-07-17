@@ -2,6 +2,7 @@
 #define STEPUPPLANNER_STEP_H
 
 #include <casadi/casadi.hpp>
+#include <StepUpPlanner/Rotation.h>
 #include <vector>
 
 namespace StepUpPlanner {
@@ -17,6 +18,7 @@ struct StepUpPlanner::Vertex {
 class StepUpPlanner::Step {
 
     casadi::DM m_position;
+    StepUpPlanner::Rotation m_rotation;
     std::vector<StepUpPlanner::Vertex> m_footVertices;
     casadi::MX m_edgeConstraints;
 
@@ -42,6 +44,10 @@ public:
     casadi::DM &position();
 
     const casadi::DM &position() const;
+
+    StepUpPlanner::Rotation& rotation();
+
+    const StepUpPlanner::Rotation& rotation() const;
 
     casadi::DM getCoPBounds() const;
 

@@ -88,18 +88,8 @@ if(NOT CMAKE_CONFIGURATION_TYPES)
     endif()
 endif()
 
-find_package(casadi REQUIRED)
-
 ### Compile- and install-related commands.
 add_subdirectory(src)
-
-include(InstallBasicPackageFiles)
-install_basic_package_files(${PROJECT_NAME}
-                            VERSION ${${PROJECT_NAME}_VERSION}
-                            COMPATIBILITY AnyNewerVersion
-                            VARS_PREFIX ${PROJECT_NAME}
-                            NO_CHECK_REQUIRED_COMPONENTS_MACRO)
-
 
 # Add the uninstall target
 include(AddUninstallTarget)

@@ -123,6 +123,26 @@ const casadi::DM &StepUpPlanner::Phase::rightPosition() const
     return m_steps.right.position();
 }
 
+StepUpPlanner::Rotation &StepUpPlanner::Phase::leftRotation()
+{
+    return m_steps.left.rotation();
+}
+
+const StepUpPlanner::Rotation &StepUpPlanner::Phase::leftRotation() const
+{
+    return m_steps.left.rotation();
+}
+
+StepUpPlanner::Rotation &StepUpPlanner::Phase::rightRotation()
+{
+    return m_steps.right.rotation();
+}
+
+const StepUpPlanner::Rotation &StepUpPlanner::Phase::rightRotation() const
+{
+    return m_steps.right.rotation();
+}
+
 const StepUpPlanner::Step &StepUpPlanner::Phase::getLeftStep() const
 {
     return m_steps.left;

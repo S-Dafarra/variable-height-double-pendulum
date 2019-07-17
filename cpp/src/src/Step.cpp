@@ -124,6 +124,16 @@ const casadi::DM &StepUpPlanner::Step::position() const
     return m_position;
 }
 
+StepUpPlanner::Rotation &StepUpPlanner::Step::rotation()
+{
+    return m_rotation;
+}
+
+const StepUpPlanner::Rotation &StepUpPlanner::Step::rotation() const
+{
+    return m_rotation;
+}
+
 casadi::DM StepUpPlanner::Step::getCoPBounds() const
 {
     return m_copBounds;

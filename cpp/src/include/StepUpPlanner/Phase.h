@@ -7,6 +7,7 @@
 #include <StepUpPlanner/PhaseType.h>
 #include <StepUpPlanner/State.h>
 #include <StepUpPlanner/Control.h>
+#include <StepUpPlanner/Rotation.h>
 #include <vector>
 
 namespace StepUpPlanner {
@@ -62,6 +63,14 @@ public:
     casadi::DM &rightPosition();
 
     const casadi::DM &rightPosition() const;
+
+    StepUpPlanner::Rotation &leftRotation();
+
+    const StepUpPlanner::Rotation &leftRotation() const;
+
+    StepUpPlanner::Rotation &rightRotation();
+
+    const StepUpPlanner::Rotation &rightRotation() const;
 
     const StepUpPlanner::Step& getLeftStep() const;
 

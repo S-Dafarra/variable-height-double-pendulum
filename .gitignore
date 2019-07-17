@@ -2,3 +2,4 @@
 *.m~
 */build
 *.user
+*.autosave
