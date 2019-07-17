@@ -21,7 +21,7 @@ macro(add_sup_test classname)
     set(testbinary ${classname}UnitTest)
     set(testname   UnitTest${classname})
     add_executable(${testbinary} ${testsrc})
-    target_link_libraries(${testbinary} PRIVATE StepUpPlanner)
+    target_link_libraries(${testbinary} PRIVATE StepUpPlanner::core)
     add_test(NAME ${testname} COMMAND ${testbinary})
 
     if(RUN_VALGRIND_TESTS)

@@ -1,7 +1,5 @@
 
-find_package(casadi REQUIRED)
-
-set(LIBRARY_TARGET_NAME ${PROJECT_NAME})
+set(LIBRARY_TARGET_NAME ${PROJECT_NAME}_core)
 
 # List of CPP (source) library files.
 set(${LIBRARY_TARGET_NAME}_SRC
@@ -33,7 +31,7 @@ set(${LIBRARY_TARGET_NAME}_HDR
 
 add_library(${LIBRARY_TARGET_NAME} ${${LIBRARY_TARGET_NAME}_SRC} ${${LIBRARY_TARGET_NAME}_HDR})
 
-add_library(${PROJECT_NAME}::${LIBRARY_TARGET_NAME} ALIAS ${LIBRARY_TARGET_NAME})
+add_library(${PROJECT_NAME}::core ALIAS ${LIBRARY_TARGET_NAME})
 
 set_target_properties(${LIBRARY_TARGET_NAME} PROPERTIES VERSION       ${${PROJECT_NAME}_VERSION}
                                                         PUBLIC_HEADER "${${LIBRARY_TARGET_NAME}_HDR}")
@@ -58,13 +56,5 @@ install(TARGETS ${LIBRARY_TARGET_NAME}
         ARCHIVE       DESTINATION "${CMAKE_INSTALL_LIBDIR}"                            COMPONENT lib
         RUNTIME       DESTINATION "${CMAKE_INSTALL_BINDIR}"                            COMPONENT bin
         PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${LIBRARY_TARGET_NAME}" COMPONENT dev)
-
- include(InstallBasicPackageFiles)
- install_basic_package_files(${PROJECT_NAME}
-                                    VERSION ${${PROJECT_NAME}_VERSION}
-                                    COMPATIBILITY AnyNewerVersion
-                                    VARS_PREFIX ${PROJECT_NAME}
-                                    NO_CHECK_REQUIRED_COMPONENTS_MACRO)
-
 
 message(STATUS "Created target ${LIBRARY_TARGET_NAME} for export ${PROJECT_NAME}.")
