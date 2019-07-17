@@ -30,4 +30,5 @@ macro(add_sup_test classname)
 endmacro()
 
 add_sup_test(FiveAndThreePhases)
+add_sup_test(Rotation)
 

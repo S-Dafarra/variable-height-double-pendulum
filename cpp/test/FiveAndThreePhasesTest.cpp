@@ -138,5 +138,5 @@ int main() {
     ASSERT_IS_TRUE(ok);
 
 
-
+    return EXIT_SUCCESS;
 }
