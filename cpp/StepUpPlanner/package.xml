@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="2">
+  <name>step_up_planner</name>
+  <version>0.0.1</version>
+  <description>Node for the communication with the StepUpPlanner</description>
+  <maintainer email="sdafarra@ihmc.us">Stefano Dafarra</maintainer>
+  <license>Apache License 2.0</license>
+  <author>Stefano Dafarra</author>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <build_depend>rclcpp</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>controller_msgs</build_depend>
+
+
+  <exec_depend>rclcpp</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>controller_msgs</exec_depend>
+
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
