@@ -38,10 +38,12 @@ add_library(${PROJECT_NAME}::core ALIAS ${LIBRARY_TARGET_NAME})
 set_target_properties(${LIBRARY_TARGET_NAME} PROPERTIES VERSION       ${${PROJECT_NAME}_VERSION}
                                                         PUBLIC_HEADER "${${LIBRARY_TARGET_NAME}_HDR}")
 
+target_include_directories(${LIBRARY_TARGET_NAME} PRIVATE ${PYTHON_INCLUDE_DIRS})
+
 target_include_directories(${LIBRARY_TARGET_NAME} PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
                                                          "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>")
 
-target_link_libraries(${LIBRARY_TARGET_NAME} PRIVATE ${PROJECT_NAME}_matplotlibcpp)
+target_link_libraries(${LIBRARY_TARGET_NAME} PRIVATE ${PROJECT_NAME}_matplotlibcpp ${PYTHON_LIBRARIES})
 
 target_link_libraries(${LIBRARY_TARGET_NAME} PUBLIC casadi)
 # If you used find_package() you need to use target_include_directories() and/or

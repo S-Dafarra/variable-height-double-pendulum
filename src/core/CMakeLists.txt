@@ -1,4 +1,5 @@
 find_package(casadi REQUIRED)
+find_package(PythonLibs 2.7)
 
 ### Compile- and install-related commands.
 add_subdirectory(deps)
