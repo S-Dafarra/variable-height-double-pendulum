@@ -16,7 +16,7 @@ class StepUpPlanner::Settings {
 
     double m_finalStateAnticipation;
 
-    unsigned int m_phaseLength;
+    unsigned long m_phaseLength;
 
     std::string m_solverName;
     unsigned int m_solverVerbosity;
@@ -41,9 +41,9 @@ public:
 
     double getTorsionalFrictionCoefficient() const;
 
-    unsigned int &phaseLength();
+    unsigned long &phaseLength();
 
-    unsigned int phaseLength() const;
+    unsigned long phaseLength() const;
 
     bool setFinalStateAnticipation(double finalStateAnticipation); //The percentage of the last phase in which the error from the desired state is considered
 

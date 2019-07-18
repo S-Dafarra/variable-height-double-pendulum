@@ -465,3 +465,8 @@ void StepUpPlanner::Solver::clear()
     m_Asol.clear();
 }
 
+bool StepUpPlanner::Solver::isReady() const
+{
+    return (m_solverState == SolverState::PROBLEM_SET) || (m_solverState == SolverState::PROBLEM_SOLVED);
+}
+

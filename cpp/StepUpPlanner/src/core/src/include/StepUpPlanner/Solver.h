@@ -100,6 +100,8 @@ public:
     bool getFullSolution(std::vector<StepUpPlanner::Phase>& phases) const;
 
     void clear();
+
+    bool isReady() const;
 };
 
 #endif // STEPUPPLANNER_SOLVER_H

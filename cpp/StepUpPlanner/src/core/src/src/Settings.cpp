@@ -66,12 +66,12 @@ double StepUpPlanner::Settings::getTorsionalFrictionCoefficient() const
     return m_torsionalFrictionCoefficient;
 }
 
-unsigned int &StepUpPlanner::Settings::phaseLength()
+unsigned long &StepUpPlanner::Settings::phaseLength()
 {
     return m_phaseLength;
 }
 
-unsigned int StepUpPlanner::Settings::phaseLength() const
+unsigned long StepUpPlanner::Settings::phaseLength() const
 {
     return m_phaseLength;
 }
