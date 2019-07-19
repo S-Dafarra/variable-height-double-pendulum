@@ -10,6 +10,11 @@
 #include <vector>
 #include <string>
 
+#define STEPUPPLANNER_REQUEST_TOPIC    "/us/ihmc/stepUpPlanner/request"
+#define STEPUPPLANNER_RESPOND_TOPIC    "/us/ihmc/stepUpPlanner/respond"
+#define STEPUPPLANNER_PARAMETERS_TOPIC "/us/ihmc/stepUpPlanner/parameters"
+#define STEPUPPLANNER_ERRORS_TOPIC     "/us/ihmc/stepUpPlanner/errors"
+
 namespace StepUpPlanner {
     class Responder;
 }
@@ -27,7 +32,7 @@ class StepUpPlanner::Responder : public rclcpp::Node {
     rclcpp::Publisher<controller_msgs::msg::StepUpPlannerErrorMessage>::SharedPtr m_errorPublisher;
     rclcpp::Subscription<controller_msgs::msg::StepUpPlannerParametersMessage>::SharedPtr m_parametersSubscriber;
     rclcpp::Subscription<controller_msgs::msg::StepUpPlannerRequestMessage>::SharedPtr m_requestSubscriber;
-    controller_msgs::msg::StepUpPlannerRespondMessage m_respondMessage;
+    controller_msgs::msg::StepUpPlannerRespondMessage::SharedPtr m_respondMessage;
     std::vector<StepUpPlanner::Phase> m_phases;
     StepUpPlanner::Solver m_solver;
 
@@ -38,6 +43,8 @@ class StepUpPlanner::Responder : public rclcpp::Node {
     void sendErrorMessage(Errors errorType, const std::string& errorMessage);
 
     void sendRespondMessage();
+
+    void ackReceivedParameters(unsigned int message_id);
 
 public:
 

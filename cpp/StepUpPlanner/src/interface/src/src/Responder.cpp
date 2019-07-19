@@ -47,7 +47,6 @@ void StepUpPlanner::Responder::respond(const controller_msgs::msg::StepUpPlanner
     references.desiredState().setPosition(msg->desired_com_position.x, msg->desired_com_position.y, msg->desired_com_position.z);
     references.desiredState().setVelocity(msg->desired_com_velocity.x, msg->desired_com_velocity.y, msg->desired_com_velocity.z);
 
-    references.desiredControl().zero();
     references.desiredControl().left().setMultiplier(msg->left_desired_final_control.multiplier);
     references.desiredControl().left().setCoP(msg->left_desired_final_control.cop.x, msg->left_desired_final_control.cop.y);
     references.desiredControl().right().setMultiplier(msg->right_desired_final_control.multiplier);
@@ -70,6 +69,8 @@ void StepUpPlanner::Responder::respond(const controller_msgs::msg::StepUpPlanner
 
 void StepUpPlanner::Responder::processParameters(const controller_msgs::msg::StepUpPlannerParametersMessage::SharedPtr msg)
 {
+    RCLCPP_INFO(this->get_logger(), "[processParameters] Parameters received");
+
     m_phases.resize(msg->phases_settings.size());
 
     for (size_t phase = 0; phase < m_phases.size(); ++phase) {
@@ -185,25 +186,32 @@ void StepUpPlanner::Responder::processParameters(const controller_msgs::msg::Ste
                          "Failed to reset the problem.");
         return;
     }
+
+    RCLCPP_INFO(this->get_logger(), "[processParameters] Parameters set correctly.");
+
+    ackReceivedParameters(msg->sequence_id);
+
 }
 
 void StepUpPlanner::Responder::sendErrorMessage(StepUpPlanner::Responder::Errors errorType, const std::string &errorMessage)
 {
-    auto error = controller_msgs::msg::StepUpPlannerErrorMessage();
+    auto error = std::make_shared<controller_msgs::msg::StepUpPlannerErrorMessage>();
 
     if (errorType == Errors::PARAMETERS_ERROR) {
-        error.error_code = 1;
+        error->error_code = 1;
     } else if (errorType == Errors::PARAMETERS_NOT_SET) {
-        error.error_code = 2;
+        error->error_code = 2;
     } else if (errorType == Errors::REQUEST_ERROR) {
-        error.error_code = 3;
+        error->error_code = 3;
     } else if (errorType == Errors::SOLVER_ERROR) {
-        error.error_code = 4;
+        error->error_code = 4;
     }
 
-    error.error_description = errorMessage;
+    error->error_description = errorMessage;
 
     m_errorPublisher->publish(error);
+
+    RCLCPP_ERROR(this->get_logger(), "[StepUpPlanner::Responder] " + errorMessage);
 }
 
 void StepUpPlanner::Responder::sendRespondMessage()
@@ -211,10 +219,10 @@ void StepUpPlanner::Responder::sendRespondMessage()
     bool ok = m_solver.getFullSolution(m_phases);
     assert(ok);
 
-    m_respondMessage.phases_result.resize(m_phases.size());
+    m_respondMessage->phases_result.resize(m_phases.size());
 
     for (size_t p = 0; p < m_phases.size(); ++p) {
-        auto& phaseResult = m_respondMessage.phases_result[p];
+        auto& phaseResult = m_respondMessage->phases_result[p];
 
         phaseResult.duration = static_cast<double>(m_phases[p].duration());
 
@@ -255,20 +263,24 @@ void StepUpPlanner::Responder::sendRespondMessage()
 
 }
 
+void StepUpPlanner::Responder::ackReceivedParameters(unsigned int message_id)
+{
+    auto error = std::make_shared<controller_msgs::msg::StepUpPlannerErrorMessage>();
+    error->error_description = "";
+    error->error_code = 0;
+    error->sequence_id_received = message_id;
+    m_errorPublisher->publish(error);
+}
+
 StepUpPlanner::Responder::Responder()
 : Node("StepUpPlannerResponder")
 {
-    m_respondPublisher = this->create_publisher<controller_msgs::msg::StepUpPlannerRespondMessage>("/us/ihmc/stepUpPlanner");
-    m_errorPublisher = this->create_publisher<controller_msgs::msg::StepUpPlannerErrorMessage>("/us/ihmc/stepUpPlanner");
+    m_respondMessage = std::make_shared<controller_msgs::msg::StepUpPlannerRespondMessage>();
+    m_respondPublisher = this->create_publisher<controller_msgs::msg::StepUpPlannerRespondMessage>(STEPUPPLANNER_RESPOND_TOPIC);
+    m_errorPublisher = this->create_publisher<controller_msgs::msg::StepUpPlannerErrorMessage>(STEPUPPLANNER_ERRORS_TOPIC);
     m_requestSubscriber = this->create_subscription<controller_msgs::msg::StepUpPlannerRequestMessage>(
-        "/us/ihmc/stepUpPlanner", std::bind(&StepUpPlanner::Responder::respond, this, _1));
+        STEPUPPLANNER_REQUEST_TOPIC, std::bind(&StepUpPlanner::Responder::respond, this, _1));
+    m_parametersSubscriber = this->create_subscription<controller_msgs::msg::StepUpPlannerParametersMessage>(
+        STEPUPPLANNER_PARAMETERS_TOPIC, std::bind(&StepUpPlanner::Responder::processParameters, this, _1));
 }
 
-
-int main(int argc, char * argv[])
-{
-    rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<StepUpPlanner::Responder>());
-    rclcpp::shutdown();
-    return EXIT_SUCCESS;
-}
