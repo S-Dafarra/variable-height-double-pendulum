@@ -12,6 +12,8 @@ class StepUpPlanner::Rotation {
     casadi::DM m_rotation, m_quaternion;
     casadi::DM skew(double i, double j, double k);
 
+    void computeQuaternion();
+
 public:
 
     Rotation();

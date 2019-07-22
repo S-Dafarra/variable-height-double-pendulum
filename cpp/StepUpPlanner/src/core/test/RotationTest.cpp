@@ -36,6 +36,20 @@ bool matricesAreEqual(const casadi::DM& left, const casadi::DM& right, double to
     return true;
 }
 
+bool vectorsAreEqual(const casadi::DM& left, const casadi::DM& right, double tol = 1e-15) {
+    if (left.rows() != right.rows()) {
+        return false;
+    }
+
+    for (int i = 0; i < left.rows(); ++i) {
+        if (std::abs(static_cast<double>(left(i) - right(i))) > tol) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 int main() {
 
     casadi::DM identity = casadi::DM::zeros(3,3);
@@ -74,6 +88,18 @@ int main() {
     expectedIdentity = casadi::DM::mtimes(testRotation.asMatrix(), invertedRotation.asMatrix());
 
     ASSERT_IS_TRUE(matricesAreEqual(expectedIdentity, identity));
+
+    quaternion(0) = getRandomDouble();
+    quaternion(1) = getRandomDouble(-1.0, 1.0);
+    quaternion(2) = getRandomDouble(-1.0, 1.0);
+    quaternion(3) = getRandomDouble(-1.0, 1.0);
+
+    testRotation.setFromQuaternion(static_cast<double>(quaternion(0)), static_cast<double>(quaternion(1)),
+                                   static_cast<double>(quaternion(2)), static_cast<double>(quaternion(3)));
+
+    StepUpPlanner::Rotation testQuaternion(testRotation.asMatrix());
+
+    ASSERT_IS_TRUE(vectorsAreEqual(testRotation.asQuaternion(), testQuaternion.asQuaternion()));
 
     return EXIT_SUCCESS;
 }
