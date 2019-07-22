@@ -41,6 +41,8 @@ public:
 
     bool setVertices(const std::vector<StepUpPlanner::Vertex>& vertices);
 
+    const std::vector<StepUpPlanner::Vertex>& getVertices() const;
+
     casadi::DM &position();
 
     const casadi::DM &position() const;

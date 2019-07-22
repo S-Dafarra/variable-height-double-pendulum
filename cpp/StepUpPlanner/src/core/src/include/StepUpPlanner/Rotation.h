@@ -9,7 +9,7 @@ namespace StepUpPlanner {
 
 class StepUpPlanner::Rotation {
 
-    casadi::DM m_rotation;
+    casadi::DM m_rotation, m_quaternion;
     casadi::DM skew(double i, double j, double k);
 
 public:
@@ -21,6 +21,10 @@ public:
     void setFromQuaternion(double realPart, double i, double j, double k);
 
     const casadi::DM& asMatrix() const;
+
+    const casadi::DM& asQuaternion() const;
+
+    double asQuaternion(size_t i) const;
 
     static Rotation Identity();
 };

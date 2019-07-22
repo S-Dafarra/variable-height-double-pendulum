@@ -1,5 +1,6 @@
 #include <StepUpPlanner/Phase.h>
 #include <iostream>
+#include <cassert>
 
 StepUpPlanner::Phase::Phase()
     : m_duration(1,1)
@@ -113,6 +114,12 @@ const casadi::DM &StepUpPlanner::Phase::leftPosition() const
     return m_steps.left.position();
 }
 
+double StepUpPlanner::Phase::leftPosition(size_t i) const
+{
+    assert(i < 3);
+    return static_cast<double>(m_steps.left.position()(i));
+}
+
 casadi::DM &StepUpPlanner::Phase::rightPosition()
 {
     return m_steps.right.position();
@@ -121,6 +128,12 @@ casadi::DM &StepUpPlanner::Phase::rightPosition()
 const casadi::DM &StepUpPlanner::Phase::rightPosition() const
 {
     return m_steps.right.position();
+}
+
+double StepUpPlanner::Phase::rightPosition(size_t i) const
+{
+    assert(i < 3);
+    return static_cast<double>(m_steps.right.position()(i));
 }
 
 StepUpPlanner::Rotation &StepUpPlanner::Phase::leftRotation()

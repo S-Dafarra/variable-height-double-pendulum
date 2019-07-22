@@ -60,9 +60,13 @@ public:
 
     const casadi::DM &leftPosition() const;
 
+    double leftPosition(size_t i) const;
+
     casadi::DM &rightPosition();
 
     const casadi::DM &rightPosition() const;
+
+    double rightPosition(size_t i) const;
 
     StepUpPlanner::Rotation &leftRotation();
 

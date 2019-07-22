@@ -1,5 +1,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <Responder.h>
+#include <controller_msgs/msg/center_of_mass_trajectory_message.hpp>
+#include <controller_msgs/msg/footstep_data_list_message.hpp>
 #include <controller_msgs/msg/step_up_planner_parameters_message.hpp>
 #include <controller_msgs/msg/step_up_planner_request_message.hpp>
 #include <controller_msgs/msg/step_up_planner_respond_message.hpp>
@@ -62,7 +64,7 @@ public:
     {
         m_subscription = this->create_subscription<controller_msgs::msg::StepUpPlannerRespondMessage>(
             STEPUPPLANNER_RESPOND_TOPIC,
-            [this](controller_msgs::msg::StepUpPlannerRespondMessage::UniquePtr /*errorMessage*/) {
+            [this](controller_msgs::msg::StepUpPlannerRespondMessage::UniquePtr /*message*/) {
                 std::ostringstream asString;
                 asString << "Received message" << std::endl;
 
@@ -80,7 +82,59 @@ private:
 };
 RespondSubscriber::~RespondSubscriber(){}
 
-controller_msgs::msg::StepUpPlannerParametersMessage::SharedPtr fillParametersMessage(unsigned int id) {
+class CoMSubscriber : public rclcpp::Node
+{
+public:
+    CoMSubscriber(const std::string& topicName)
+        : Node("com_subscriber")
+    {
+        m_subscription = this->create_subscription<controller_msgs::msg::CenterOfMassTrajectoryMessage>(
+            topicName, [this](controller_msgs::msg::CenterOfMassTrajectoryMessage::UniquePtr message) {
+                std::ostringstream asString;
+                asString << "Received CoM message (ID " << message->euclidean_trajectory.queueing_properties.message_id <<")" << std::endl;
+
+                messagesReceived++;
+
+                RCLCPP_INFO(this->get_logger(), asString.str());
+            });
+    }
+    ~CoMSubscriber();
+
+    size_t messagesReceived = 0;
+
+private:
+    rclcpp::Subscription<controller_msgs::msg::CenterOfMassTrajectoryMessage>::SharedPtr m_subscription;
+};
+CoMSubscriber::~CoMSubscriber(){}
+
+class FootstepsSubscriber : public rclcpp::Node
+{
+public:
+    FootstepsSubscriber(const std::string& topicName)
+        : Node("footsteps_subscriber")
+    {
+        m_subscription = this->create_subscription<controller_msgs::msg::FootstepDataListMessage>(
+            topicName, [this](controller_msgs::msg::FootstepDataListMessage::UniquePtr message) {
+                std::ostringstream asString;
+                asString << "Received feet message: " << message->footstep_data_list.size() << " steps." << std::endl;
+
+                messageReceived = true;
+
+                RCLCPP_INFO(this->get_logger(), asString.str());
+            });
+    }
+    ~FootstepsSubscriber();
+
+    bool messageReceived = false;
+
+private:
+    rclcpp::Subscription<controller_msgs::msg::FootstepDataListMessage>::SharedPtr m_subscription;
+};
+FootstepsSubscriber::~FootstepsSubscriber(){}
+
+controller_msgs::msg::StepUpPlannerParametersMessage::SharedPtr fillParametersMessage(unsigned int id,
+                                                                                      const std::string& comMessageTopic,
+                                                                                      const std::string& feetMessageTopic) {
     controller_msgs::msg::StepUpPlannerParametersMessage::SharedPtr msg =
         std::make_shared<controller_msgs::msg::StepUpPlannerParametersMessage>();
 
@@ -152,6 +206,13 @@ controller_msgs::msg::StepUpPlannerParametersMessage::SharedPtr fillParametersMe
     msg->set__cost_weights(weights);
 
     msg->sequence_id = id;
+
+    msg->send_com_message = true;
+    msg->com_message_topic = comMessageTopic;
+    msg->max_com_message_length = 50;
+
+    msg->send_footstep_message = true;
+    msg->footstep_message_topic = feetMessageTopic;
 
     return msg;
 }
@@ -258,6 +319,12 @@ int main(int argc, char * argv[])
     auto errorSubscriber = std::make_shared<ErrorSubscriber>();
     auto respondSubscriber = std::make_shared<RespondSubscriber>();
 
+    std::string comTopic = "/us/ihmc/CoMtest";
+    std::string feetTopic = "/us/ihmc/FeetTest";
+
+    auto comSubscriber = std::make_shared<CoMSubscriber>(comTopic);
+    auto footStepsSubscriber = std::make_shared<FootstepsSubscriber>(feetTopic);
+
     auto parametersPublisherNode = rclcpp::Node::make_shared("parameters_publisher");
     auto parametersPublisher = parametersPublisherNode->create_publisher<controller_msgs::msg::StepUpPlannerParametersMessage>
                                (STEPUPPLANNER_PARAMETERS_TOPIC);
@@ -266,7 +333,7 @@ int main(int argc, char * argv[])
     auto requestPublisher = parametersPublisherNode->create_publisher<controller_msgs::msg::StepUpPlannerRequestMessage>
                             (STEPUPPLANNER_REQUEST_TOPIC);
 
-    auto parametersMessage = fillParametersMessage(1);
+    auto parametersMessage = fillParametersMessage(1, comTopic, feetTopic);
     loop_rate.sleep(); //This sleep is necessary to make sure that the nodes are registered
     parametersPublisher->publish(parametersMessage);
 
@@ -292,14 +359,18 @@ int main(int argc, char * argv[])
     i = 0;
     respondSubscriber->messageReceived = false;
 
-    while (!(respondSubscriber->messageReceived) && (i < 50)) {
+    while (!((respondSubscriber->messageReceived) && (comSubscriber->messagesReceived == 5) && (footStepsSubscriber->messageReceived))
+           && (i < 50)) {
         std::cout << "Loop" << std::endl;
         rclcpp::spin_some(requestPublisherNode);
         rclcpp::spin_some(responderPublisher);
         rclcpp::spin_some(errorSubscriber);
         rclcpp::spin_some(respondSubscriber);
+        rclcpp::spin_some(comSubscriber);
+        rclcpp::spin_some(footStepsSubscriber);
         ++i;
     }
+    ASSERT_IS_TRUE(i != 50);
 
     rclcpp::shutdown();
     errorSubscriber = nullptr;

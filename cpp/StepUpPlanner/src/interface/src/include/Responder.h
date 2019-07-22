@@ -7,6 +7,8 @@
 #include <controller_msgs/msg/step_up_planner_request_message.hpp>
 #include <controller_msgs/msg/step_up_planner_respond_message.hpp>
 #include <controller_msgs/msg/step_up_planner_error_message.hpp>
+#include <controller_msgs/msg/center_of_mass_trajectory_message.hpp>
+#include <controller_msgs/msg/footstep_data_list_message.hpp>
 #include <vector>
 #include <string>
 
@@ -33,16 +35,32 @@ class StepUpPlanner::Responder : public rclcpp::Node {
     rclcpp::Subscription<controller_msgs::msg::StepUpPlannerParametersMessage>::SharedPtr m_parametersSubscriber;
     rclcpp::Subscription<controller_msgs::msg::StepUpPlannerRequestMessage>::SharedPtr m_requestSubscriber;
     controller_msgs::msg::StepUpPlannerRespondMessage::SharedPtr m_respondMessage;
+    rclcpp::Publisher<controller_msgs::msg::CenterOfMassTrajectoryMessage>::SharedPtr m_CoMMessagePublisher;
+    rclcpp::Publisher<controller_msgs::msg::FootstepDataListMessage>::SharedPtr m_feetMessagePublisher;
+    std::vector<controller_msgs::msg::CenterOfMassTrajectoryMessage::SharedPtr> m_CoMMessages;
+    size_t m_CoMMessagesPerPhase;
+    controller_msgs::msg::FootstepDataListMessage::SharedPtr m_feetMessage;
+
     std::vector<StepUpPlanner::Phase> m_phases;
     StepUpPlanner::Solver m_solver;
 
+    bool prepareSolver(const controller_msgs::msg::StepUpPlannerRequestMessage::SharedPtr msg, State &initialState, References &references);
+
     void respond(const controller_msgs::msg::StepUpPlannerRequestMessage::SharedPtr msg);
+
+    bool processPhaseSettings(const controller_msgs::msg::StepUpPlannerParametersMessage::SharedPtr msg);
+
+    bool processPlannerSettings(const controller_msgs::msg::StepUpPlannerParametersMessage::SharedPtr msg, Settings &settings);
 
     void processParameters(const controller_msgs::msg::StepUpPlannerParametersMessage::SharedPtr msg);
 
     void sendErrorMessage(Errors errorType, const std::string& errorMessage);
 
     void sendRespondMessage();
+
+    void sendCenterOfMassTrajectoryMessages();
+
+    void sendFootStepDataListMessage();
 
     void ackReceivedParameters(unsigned int message_id);
 

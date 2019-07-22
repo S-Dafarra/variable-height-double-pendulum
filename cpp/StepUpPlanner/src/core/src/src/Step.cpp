@@ -114,6 +114,11 @@ bool StepUpPlanner::Step::setVertices(const std::vector<Vertex> &vertices)
     return true;
 }
 
+const std::vector<StepUpPlanner::Vertex> &StepUpPlanner::Step::getVertices() const
+{
+    return m_footVertices;
+}
+
 casadi::DM &StepUpPlanner::Step::position()
 {
     return m_position;
