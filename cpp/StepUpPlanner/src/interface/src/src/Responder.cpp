@@ -80,15 +80,13 @@ void StepUpPlanner::Responder::respond(const controller_msgs::msg::StepUpPlanner
     ok = m_solver.getFullSolution(m_phases);
     assert(ok);
 
-    sendRespondMessage();
+    prepareRespondMessage();
 
-    if (m_CoMMessagePublisher) {
-        sendCenterOfMassTrajectoryMessages();
-    }
+    sendCenterOfMassTrajectoryMessages();
 
-    if (m_feetMessagePublisher) {
-        sendFootStepDataListMessage();
-    }
+    sendFootStepDataListMessage();
+
+    m_respondPublisher->publish(m_respondMessage);
 }
 
 bool StepUpPlanner::Responder::processPhaseSettings(const controller_msgs::msg::StepUpPlannerParametersMessage::SharedPtr msg)
@@ -166,12 +164,14 @@ bool StepUpPlanner::Responder::processPlannerSettings(const controller_msgs::msg
         return false;
     }
 
-    ok = settings.setIpoptLinearSolver(msg->ipopt_linear_solver);
-    if (!ok) {
-        sendErrorMessage(Errors::PARAMETERS_ERROR,
-                         "Unknown solver name. "
-                         "See options at https://www.coin-or.org/Ipopt/documentation/node51.html#SECTION0001111010000000000000.");
-        return false;
+    if (msg->ipopt_linear_solver.size()) {
+        ok = settings.setIpoptLinearSolver(msg->ipopt_linear_solver);
+        if (!ok) {
+            sendErrorMessage(Errors::PARAMETERS_ERROR,
+                             "Unknown solver name. "
+                             "See options at https://www.coin-or.org/Ipopt/documentation/node51.html#SECTION0001111010000000000000.");
+            return false;
+        }
     }
 
     ok = settings.setFinalStateAnticipation(msg->final_state_anticipation);
@@ -230,10 +230,13 @@ void StepUpPlanner::Responder::processParameters(const controller_msgs::msg::Ste
         return;
     }
 
-    if (msg->send_com_message) {
+    if (msg->send_com_messages || msg->include_com_messages) {
 
-        m_CoMMessagePublisher = this->create_publisher<controller_msgs::msg::CenterOfMassTrajectoryMessage>(msg->com_message_topic);
-
+        if (msg->send_com_messages) {
+            m_CoMMessagePublisher = this->create_publisher<controller_msgs::msg::CenterOfMassTrajectoryMessage>(msg->com_messages_topic);
+        } else {
+            m_CoMMessagePublisher = nullptr;
+        }
         if (msg->max_com_message_length == 0) {
             sendErrorMessage(Errors::PARAMETERS_ERROR,
                              "The max_message_length is supposed to be a positive number.");
@@ -249,11 +252,18 @@ void StepUpPlanner::Responder::processParameters(const controller_msgs::msg::Ste
             m_CoMMessages.push_back(std::make_shared<controller_msgs::msg::CenterOfMassTrajectoryMessage>());
         }
 
+        if (msg->include_com_messages) {
+            m_respondMessage->com_messages.resize(m_CoMMessages.size());
+        } else {
+            m_respondMessage->com_messages.clear();
+        }
+
     } else {
         m_CoMMessagePublisher = nullptr;
+        m_respondMessage->com_messages.clear();
     }
 
-    if (msg->send_footstep_message) {
+    if (msg->send_footstep_messages || msg->include_footstep_messages) {
 
         if (m_phases.size() < 2) {
             sendErrorMessage(Errors::PARAMETERS_ERROR,
@@ -270,7 +280,12 @@ void StepUpPlanner::Responder::processParameters(const controller_msgs::msg::Ste
             }
         }
 
-        m_feetMessagePublisher = this->create_publisher<controller_msgs::msg::FootstepDataListMessage>(msg->footstep_message_topic);
+        if (msg->send_footstep_messages) {
+            m_feetMessagePublisher = this->create_publisher<controller_msgs::msg::FootstepDataListMessage>(msg->footstep_messages_topic);
+        } else {
+            m_feetMessagePublisher = nullptr;
+        }
+
         m_feetMessage = std::make_shared<controller_msgs::msg::FootstepDataListMessage>();
 
         controller_msgs::msg::FootstepDataMessage templateStep;
@@ -292,8 +307,15 @@ void StepUpPlanner::Responder::processParameters(const controller_msgs::msg::Ste
 
         m_feetMessage->footstep_data_list.resize(numberOfSingleSupports, templateStep); //Initializing to zero all the transfer times
 
+        if (msg->include_footstep_messages) {
+            m_respondMessage->foostep_messages.resize(1);
+        } else {
+            m_respondMessage->foostep_messages.clear();
+        }
+
     } else {
         m_feetMessagePublisher = nullptr;
+        m_respondMessage->foostep_messages.clear();
     }
 
     RCLCPP_INFO(this->get_logger(), "[processParameters] Parameters set correctly.");
@@ -323,7 +345,7 @@ void StepUpPlanner::Responder::sendErrorMessage(StepUpPlanner::Responder::Errors
     RCLCPP_ERROR(this->get_logger(), "[StepUpPlanner::Responder] " + errorMessage);
 }
 
-void StepUpPlanner::Responder::sendRespondMessage()
+void StepUpPlanner::Responder::prepareRespondMessage()
 {
     m_respondMessage->phases_result.resize(m_phases.size());
 
@@ -365,12 +387,14 @@ void StepUpPlanner::Responder::sendRespondMessage()
         }
     }
 
-    m_respondPublisher->publish(m_respondMessage);
-
 }
 
 void StepUpPlanner::Responder::sendCenterOfMassTrajectoryMessages()
 {
+    if (!m_CoMMessagePublisher && !m_respondMessage->com_messages.size()) {
+        return;
+    }
+
     double time = 0.0;
     for (size_t p = 0; p < m_phases.size(); ++p) {
         size_t phaseLength = m_phases[p].states().size();
@@ -419,7 +443,13 @@ void StepUpPlanner::Responder::sendCenterOfMassTrajectoryMessages()
 
             time = dT; //The time for each message is relative to the previous queued message.
 
-            m_CoMMessagePublisher->publish(m_CoMMessages[messageIndex]);
+            if (m_CoMMessagePublisher) {
+                m_CoMMessagePublisher->publish(m_CoMMessages[messageIndex]);
+            }
+
+            if (m_respondMessage->com_messages.size()) {
+                m_respondMessage->com_messages[messageIndex] = *m_CoMMessages[messageIndex];
+            }
         }
         assert(pointIndex == phaseLength);
     }
@@ -427,6 +457,9 @@ void StepUpPlanner::Responder::sendCenterOfMassTrajectoryMessages()
 
 void StepUpPlanner::Responder::sendFootStepDataListMessage()
 {
+    if (!m_feetMessagePublisher && !m_respondMessage->foostep_messages.size()) {
+        return;
+    }
 
     if (m_phases.back().getPhaseType() == StepUpPlanner::PhaseType::DOUBLE_SUPPORT) {
         m_feetMessage->final_transfer_duration = static_cast<double>(m_phases.back().duration());
@@ -490,7 +523,13 @@ void StepUpPlanner::Responder::sendFootStepDataListMessage()
 
     assert(stepIndex == m_feetMessage->footstep_data_list.size());
 
-    m_feetMessagePublisher->publish(m_feetMessage);
+    if (m_feetMessagePublisher) {
+        m_feetMessagePublisher->publish(m_feetMessage);
+    }
+
+    if (m_respondMessage->foostep_messages.size()) {
+        m_respondMessage->foostep_messages[0] = *m_feetMessage;
+    }
 }
 
 void StepUpPlanner::Responder::ackReceivedParameters(unsigned int message_id)

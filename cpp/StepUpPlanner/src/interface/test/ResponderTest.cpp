@@ -207,12 +207,14 @@ controller_msgs::msg::StepUpPlannerParametersMessage::SharedPtr fillParametersMe
 
     msg->sequence_id = id;
 
-    msg->send_com_message = true;
-    msg->com_message_topic = comMessageTopic;
+    msg->send_com_messages = true;
+    msg->com_messages_topic = comMessageTopic;
     msg->max_com_message_length = 50;
+    msg->include_com_messages = true;
 
-    msg->send_footstep_message = true;
-    msg->footstep_message_topic = feetMessageTopic;
+    msg->send_footstep_messages = true;
+    msg->footstep_messages_topic = feetMessageTopic;
+    msg->include_footstep_messages = true;
 
     return msg;
 }
@@ -360,8 +362,8 @@ int main(int argc, char * argv[])
     respondSubscriber->messageReceived = false;
 
     while (!((respondSubscriber->messageReceived) && (comSubscriber->messagesReceived == 5) && (footStepsSubscriber->messageReceived))
-           && (i < 50)) {
-        std::cout << "Loop" << std::endl;
+           && (i < 100)) {
+        std::cout << "Loop " << i << std::endl;
         rclcpp::spin_some(requestPublisherNode);
         rclcpp::spin_some(responderPublisher);
         rclcpp::spin_some(errorSubscriber);
@@ -370,7 +372,7 @@ int main(int argc, char * argv[])
         rclcpp::spin_some(footStepsSubscriber);
         ++i;
     }
-    ASSERT_IS_TRUE(i != 50);
+    ASSERT_IS_TRUE(i != 100);
 
     rclcpp::shutdown();
     errorSubscriber = nullptr;

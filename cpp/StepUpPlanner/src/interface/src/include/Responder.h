@@ -56,7 +56,7 @@ class StepUpPlanner::Responder : public rclcpp::Node {
 
     void sendErrorMessage(Errors errorType, const std::string& errorMessage);
 
-    void sendRespondMessage();
+    void prepareRespondMessage();
 
     void sendCenterOfMassTrajectoryMessages();
 
