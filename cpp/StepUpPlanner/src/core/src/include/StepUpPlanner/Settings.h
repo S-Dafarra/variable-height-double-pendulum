@@ -19,7 +19,7 @@ class StepUpPlanner::Settings {
     unsigned long m_phaseLength;
 
     std::string m_solverName;
-    unsigned int m_solverVerbosity;
+    unsigned long m_solverVerbosity;
 
     StepUpPlanner::CostWeights m_costWeights;
 
@@ -54,9 +54,9 @@ public:
 
     const std::string& getIpoptLinearSolver() const;
 
-    unsigned int& solverVerbosity();
+    unsigned long& solverVerbosity();
 
-    unsigned int solverVerbosity() const;
+    unsigned long solverVerbosity() const;
 
     StepUpPlanner::CostWeights& costWeights();
 

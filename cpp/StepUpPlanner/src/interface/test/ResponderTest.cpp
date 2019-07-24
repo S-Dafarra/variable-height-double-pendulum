@@ -176,21 +176,21 @@ controller_msgs::msg::StepUpPlannerParametersMessage::SharedPtr fillParametersMe
     leftSteps[4].set__state(stand);
     rightSteps[4].set__state(stand);
 
-    msg->phases_settings.resize(5);
-    for (size_t p = 0; p < msg->phases_settings.size(); ++p) {
-        msg->phases_settings[p].set__left_step_parameters(leftSteps[p]);
-        msg->phases_settings[p].set__right_step_parameters(rightSteps[p]);
+    msg->phases_parameters.resize(5);
+    for (size_t p = 0; p < msg->phases_parameters.size(); ++p) {
+        msg->phases_parameters[p].set__left_step_parameters(leftSteps[p]);
+        msg->phases_parameters[p].set__right_step_parameters(rightSteps[p]);
     }
 
     msg->phase_length = 30;
     msg->solver_verbosity = 1;
     msg->max_leg_length = 1.2;
-    msg->ipopt_linear_solver = "ma27";
+//    msg->ipopt_linear_solver = "ma27";
     msg->final_state_anticipation = 0.3;
     msg->static_friction_coefficient = 0.5;
     msg->torsional_friction_coefficient = 0.1;
 
-    double N = msg->phase_length * msg->phases_settings.size();
+    double N = msg->phase_length * msg->phases_parameters.size();
 
     controller_msgs::msg::StepUpPlannerCostWeights weights;
 
@@ -201,7 +201,7 @@ controller_msgs::msg::StepUpPlannerParametersMessage::SharedPtr fillParametersMe
     weights.max_control_multiplier = 0.1;
     weights.final_state = 10.0;
     weights.control_variations = 1.0/N;
-    weights.durations_difference = 5.0/msg->phases_settings.size();
+    weights.durations_difference = 5.0/msg->phases_parameters.size();
 
     msg->set__cost_weights(weights);
 

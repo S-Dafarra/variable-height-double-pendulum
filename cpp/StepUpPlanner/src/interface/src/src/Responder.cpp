@@ -91,12 +91,18 @@ void StepUpPlanner::Responder::respond(const controller_msgs::msg::StepUpPlanner
 
 bool StepUpPlanner::Responder::processPhaseSettings(const controller_msgs::msg::StepUpPlannerParametersMessage::SharedPtr msg)
 {
-    m_phases.resize(msg->phases_settings.size());
+    if (!msg->phases_parameters.size()) {
+        sendErrorMessage(Errors::PARAMETERS_ERROR,
+                         "No phases provided");
+        return false;
+    }
+
+    m_phases.resize(msg->phases_parameters.size());
 
     for (size_t phase = 0; phase < m_phases.size(); ++phase) {
         StepUpPlanner::Step leftStep, *leftPointer, rightStep, *rightPointer;
 
-        auto& setting = msg->phases_settings[phase];
+        auto& setting = msg->phases_parameters[phase];
         auto& leftParameters = setting.left_step_parameters;
         auto& rightParameters = setting.right_step_parameters;
 
@@ -348,11 +354,13 @@ void StepUpPlanner::Responder::sendErrorMessage(StepUpPlanner::Responder::Errors
 void StepUpPlanner::Responder::prepareRespondMessage()
 {
     m_respondMessage->phases_result.resize(m_phases.size());
+    m_respondMessage->total_duration = 0.0;
 
     for (size_t p = 0; p < m_phases.size(); ++p) {
         auto& phaseResult = m_respondMessage->phases_result[p];
 
         phaseResult.duration = static_cast<double>(m_phases[p].duration());
+        m_respondMessage->total_duration += phaseResult.duration;
 
         phaseResult.com_position.resize(m_phases[p].states().size());
         phaseResult.com_velocity.resize(m_phases[p].states().size());

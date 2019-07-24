@@ -241,6 +241,11 @@ void StepUpPlanner::Solver::setupOpti()
 
 bool StepUpPlanner::Solver::setupProblem(const std::vector<StepUpPlanner::Phase> &phases, const StepUpPlanner::Settings &settings)
 {
+    if (!phases.size()) {
+        std::cerr << "[StepUpPlanner::Solver::setupProblem] No phases provided." <<std::endl;
+        return false;
+    }
+
     m_settings = settings;
 
     m_initialStateParameter = m_opti.parameter(6);

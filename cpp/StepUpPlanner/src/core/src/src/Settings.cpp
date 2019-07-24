@@ -114,12 +114,12 @@ const std::string &StepUpPlanner::Settings::getIpoptLinearSolver() const
     return m_solverName;
 }
 
-unsigned int &StepUpPlanner::Settings::solverVerbosity()
+unsigned long &StepUpPlanner::Settings::solverVerbosity()
 {
     return m_solverVerbosity;
 }
 
-unsigned int StepUpPlanner::Settings::solverVerbosity() const
+unsigned long StepUpPlanner::Settings::solverVerbosity() const
 {
     return m_solverVerbosity;
 }
