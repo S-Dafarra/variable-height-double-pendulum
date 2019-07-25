@@ -3,6 +3,7 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include <StepUpPlanner/Solver.h>
+#include <StepUpPlanner/Plotter.h>
 #include <controller_msgs/msg/step_up_planner_parameters_message.hpp>
 #include <controller_msgs/msg/step_up_planner_request_message.hpp>
 #include <controller_msgs/msg/step_up_planner_respond_message.hpp>
@@ -48,6 +49,7 @@ class StepUpPlanner::Responder : public rclcpp::Node {
 
     std::vector<StepUpPlanner::Phase> m_phases;
     StepUpPlanner::Solver m_solver;
+    StepUpPlanner::Plotter m_plotter;
 
     bool prepareSolver(const controller_msgs::msg::StepUpPlannerRequestMessage::SharedPtr msg, State &initialState, References &references);
 

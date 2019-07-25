@@ -193,7 +193,9 @@ StepUpPlanner::Plotter::Plotter()
 { }
 
 StepUpPlanner::Plotter::~Plotter()
-{ }
+{
+    closeAll();
+}
 
 void StepUpPlanner::Plotter::plotFullSolution(const std::vector<StepUpPlanner::Phase> &phases)
 {

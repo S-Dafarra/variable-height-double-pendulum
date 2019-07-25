@@ -95,6 +95,9 @@ void StepUpPlanner::Responder::respond(const controller_msgs::msg::StepUpPlanner
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::string duration = std::to_string((std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count())/1000.0);
     RCLCPP_INFO(this->get_logger(), "[processParameters] Respond published (" + duration + "[s]).");
+
+    m_plotter.closeAll();
+    m_plotter.plotFullSolution(m_phases);
 }
 
 bool StepUpPlanner::Responder::processPhaseSettings(const controller_msgs::msg::StepUpPlannerParametersMessage::SharedPtr msg)
