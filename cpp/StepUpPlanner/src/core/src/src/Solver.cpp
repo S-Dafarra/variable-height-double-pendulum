@@ -379,14 +379,16 @@ size_t StepUpPlanner::Solver::numberOfPhases() const
 StepUpPlanner::Phase &StepUpPlanner::Solver::getPhase(size_t i)
 {
     assert(i < m_phases.size() && "[ERROR][StepUpPlanner::Solver::getPhase] Index out of bounds.");
-    assert(m_solverState == SolverState::PROBLEM_SET && "[ERROR][StepUpPlanner::Solver::getPhase] First you have to set the problem.");
+    assert(((m_solverState == SolverState::PROBLEM_SET) || (m_solverState == SolverState::PROBLEM_SOLVED)) &&
+           "[ERROR][StepUpPlanner::Solver::getPhase] First you have to set the problem.");
     return m_phases[i].phase;
 }
 
 const StepUpPlanner::Phase &StepUpPlanner::Solver::getPhase(size_t i) const
 {
     assert(i < m_phases.size() && "[ERROR][StepUpPlanner::Solver::getPhase] Index out of bounds.");
-    assert(m_solverState == SolverState::PROBLEM_SET && "[ERROR][StepUpPlanner::Solver::getPhase] First you have to set the problem.");
+    assert(((m_solverState == SolverState::PROBLEM_SET) || (m_solverState == SolverState::PROBLEM_SOLVED)) &&
+           "[ERROR][StepUpPlanner::Solver::getPhase] First you have to set the problem.");
     return m_phases[i].phase;
 }
 

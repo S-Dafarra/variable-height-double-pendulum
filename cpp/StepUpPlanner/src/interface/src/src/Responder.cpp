@@ -427,6 +427,7 @@ void StepUpPlanner::Responder::sendCenterOfMassTrajectoryMessages()
     }
 
     double time = 0.0;
+    size_t previousMessageID = 0;
     for (size_t p = 0; p < m_phases.size(); ++p) {
         size_t phaseLength = m_phases[p].states().size();
         double dT = static_cast<double>(m_phases[p].duration()) / phaseLength;
@@ -441,19 +442,24 @@ void StepUpPlanner::Responder::sendCenterOfMassTrajectoryMessages()
             }
 
             size_t messageIndex = p * m_CoMMessagesPerPhase + m;
+            size_t messageID = messageIndex * 10 + 1;
+
 
             auto& euclideanTrajectory = m_CoMMessages[messageIndex]->euclidean_trajectory;
 
-            euclideanTrajectory.queueing_properties.sequence_id = static_cast<unsigned int>(messageIndex);
-            euclideanTrajectory.queueing_properties.message_id = static_cast<long>(messageIndex);
+            euclideanTrajectory.queueing_properties.sequence_id = static_cast<unsigned int>(messageID);
+            euclideanTrajectory.queueing_properties.message_id = static_cast<long>(messageID);
+            euclideanTrajectory.sequence_id = static_cast<unsigned int>(messageID);
 
             if (messageIndex == 0) {
                 euclideanTrajectory.queueing_properties.set__execution_mode(
                     euclideanTrajectory.queueing_properties.EXECUTION_MODE_OVERRIDE);
             } else {
                 euclideanTrajectory.queueing_properties.set__execution_mode(euclideanTrajectory.queueing_properties.EXECUTION_MODE_QUEUE);
-                euclideanTrajectory.queueing_properties.set__previous_message_id(static_cast<long>(messageIndex - 1));
+                euclideanTrajectory.queueing_properties.set__previous_message_id(static_cast<long>(previousMessageID));
             }
+
+            previousMessageID = messageID;
 
             euclideanTrajectory.taskspace_trajectory_points.resize(messagesElements);
 

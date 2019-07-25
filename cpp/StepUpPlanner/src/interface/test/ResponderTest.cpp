@@ -64,11 +64,15 @@ public:
     {
         m_subscription = this->create_subscription<controller_msgs::msg::StepUpPlannerRespondMessage>(
             STEPUPPLANNER_RESPOND_TOPIC,
-            [this](controller_msgs::msg::StepUpPlannerRespondMessage::UniquePtr /*message*/) {
+            [this](controller_msgs::msg::StepUpPlannerRespondMessage::UniquePtr message) {
                 std::ostringstream asString;
                 asString << "Received message" << std::endl;
 
                 messageReceived = true;
+
+                for (size_t i = 0; i < message->com_messages.size(); ++i) {
+                    ASSERT_IS_TRUE(message->com_messages[i].euclidean_trajectory.taskspace_trajectory_points.size());
+                }
 
                 RCLCPP_INFO(this->get_logger(), asString.str());
             });
@@ -92,6 +96,7 @@ public:
             topicName, [this](controller_msgs::msg::CenterOfMassTrajectoryMessage::UniquePtr message) {
                 std::ostringstream asString;
                 asString << "Received CoM message (ID " << message->euclidean_trajectory.queueing_properties.message_id <<")" << std::endl;
+                ASSERT_IS_TRUE(message->euclidean_trajectory.taskspace_trajectory_points.size());
 
                 messagesReceived++;
 
