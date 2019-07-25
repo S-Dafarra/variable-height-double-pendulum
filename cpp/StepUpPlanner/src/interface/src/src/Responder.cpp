@@ -277,9 +277,21 @@ void StepUpPlanner::Responder::processParameters(const controller_msgs::msg::Ste
             return;
         }
 
-        for (size_t i = 1; i < m_phases.size(); ++i) {
+        if (m_phases.begin()->getPhaseType() == StepUpPlanner::PhaseType::FLYING) {
+            sendErrorMessage(Errors::PARAMETERS_ERROR,
+                             "Cannot send feet message if the first phase is a FLYING phase.");
+            return;
+        }
 
-            if (m_phases[i].getPhaseType() == m_phases[i-1].getPhaseType()) {
+        for (size_t i = 0; i < m_phases.size(); ++i) {
+
+            if (m_phases[i].getPhaseType() == StepUpPlanner::PhaseType::FLYING) {
+                sendErrorMessage(Errors::PARAMETERS_ERROR,
+                                 "The FLYING phase is not supported when generating feet messages.");
+                return;
+            }
+
+            if (i > 0 && m_phases[i].getPhaseType() == m_phases[i-1].getPhaseType()) {
                 sendErrorMessage(Errors::PARAMETERS_ERROR,
                                  "Cannot send feet message if two consecutive phases are equal.");
                 return;
@@ -294,24 +306,35 @@ void StepUpPlanner::Responder::processParameters(const controller_msgs::msg::Ste
 
         m_feetMessage = std::make_shared<controller_msgs::msg::FootstepDataListMessage>();
 
-        controller_msgs::msg::FootstepDataMessage templateStep;
-        templateStep.transfer_duration = 0.0;
+        bool leftWasSwinging  = m_phases.begin()->getPhaseType() == StepUpPlanner::PhaseType::SINGLE_SUPPORT_RIGHT;
+        bool rightWasSwinging = m_phases.begin()->getPhaseType() == StepUpPlanner::PhaseType::SINGLE_SUPPORT_LEFT;
+        size_t numberOfSteps = 0;
 
-        size_t numberOfSingleSupports = 0;
-        for (size_t i = 0; i < m_phases.size() - 1; ++i) {
-            if ((m_phases[i].getPhaseType() == StepUpPlanner::PhaseType::SINGLE_SUPPORT_LEFT) ||
-                (m_phases[i].getPhaseType() == StepUpPlanner::PhaseType::SINGLE_SUPPORT_RIGHT)) {
-                numberOfSingleSupports++;
+        for (size_t i = 1; i < m_phases.size(); ++i) {
+            bool leftIsSwinging  = m_phases[i].getPhaseType() == StepUpPlanner::PhaseType::SINGLE_SUPPORT_RIGHT;
+            bool rightIsSwinging = m_phases[i].getPhaseType() == StepUpPlanner::PhaseType::SINGLE_SUPPORT_LEFT;
+
+            if (leftWasSwinging && !leftIsSwinging) {
+                numberOfSteps++;
             }
+
+            if (rightWasSwinging && !rightIsSwinging) {
+                numberOfSteps++;
+            }
+
+            leftWasSwinging = leftIsSwinging;
+            rightWasSwinging = rightIsSwinging;
         }
 
-        if (numberOfSingleSupports == 0) {
+        if (numberOfSteps == 0) {
             sendErrorMessage(Errors::PARAMETERS_ERROR,
                              "No footstep message can be sent given the desired walking phases.");
             return;
         }
 
-        m_feetMessage->footstep_data_list.resize(numberOfSingleSupports, templateStep); //Initializing to zero all the transfer times
+        controller_msgs::msg::FootstepDataMessage templateStep;
+        templateStep.transfer_duration = 0.0;
+        m_feetMessage->footstep_data_list.resize(numberOfSteps, templateStep); //Initializing to zero all the transfer times
 
         if (msg->include_footstep_messages) {
             m_respondMessage->foostep_messages.resize(1);
@@ -475,57 +498,76 @@ void StepUpPlanner::Responder::sendFootStepDataListMessage()
         m_feetMessage->final_transfer_duration = 1e-4;
     }
 
+    bool leftWasSwinging  = m_phases.begin()->getPhaseType() == StepUpPlanner::PhaseType::SINGLE_SUPPORT_RIGHT;
+    bool rightWasSwinging = m_phases.begin()->getPhaseType() == StepUpPlanner::PhaseType::SINGLE_SUPPORT_LEFT;
     size_t stepIndex = 0;
-    size_t i = 0;
-    while (i < m_phases.size() - 1) {
-        if (m_phases[i].getPhaseType() == StepUpPlanner::PhaseType::DOUBLE_SUPPORT) {
-            m_feetMessage->footstep_data_list[stepIndex].transfer_duration = static_cast<double>(m_phases[i].duration());
-            ++i;
-        } else if (m_phases[i].getPhaseType() == StepUpPlanner::PhaseType::SINGLE_SUPPORT_LEFT) {
-            m_feetMessage->footstep_data_list[stepIndex].swing_duration = static_cast<double>(m_phases[i].duration());
-            ++i;
-            m_feetMessage->footstep_data_list[stepIndex].robot_side = m_feetMessage->footstep_data_list[stepIndex].ROBOT_SIDE_LEFT;
-            m_feetMessage->footstep_data_list[stepIndex].location.x = m_phases[i].leftPosition(0);
-            m_feetMessage->footstep_data_list[stepIndex].location.y = m_phases[i].leftPosition(1);
-            m_feetMessage->footstep_data_list[stepIndex].location.z = m_phases[i].leftPosition(2);
 
-            m_feetMessage->footstep_data_list[stepIndex].orientation.w = m_phases[i].leftRotation().asQuaternion(0);
-            m_feetMessage->footstep_data_list[stepIndex].orientation.x = m_phases[i].leftRotation().asQuaternion(1);
-            m_feetMessage->footstep_data_list[stepIndex].orientation.y = m_phases[i].leftRotation().asQuaternion(2);
-            m_feetMessage->footstep_data_list[stepIndex].orientation.z = m_phases[i].leftRotation().asQuaternion(3);
+    for (size_t i = 0; i < m_phases.size(); ++i) {
 
-            m_feetMessage->footstep_data_list[stepIndex].predicted_contact_points_2d.resize(m_phases[i].getLeftStep().getVertices().size());
-            for (size_t v = 0; v < m_phases[i].getLeftStep().getVertices().size(); ++v) {
-                const StepUpPlanner::Vertex& vertex = m_phases[i].getLeftStep().getVertices()[v];
+        if (i != 0){
 
-                m_feetMessage->footstep_data_list[stepIndex].predicted_contact_points_2d[v].x = vertex.x;
-                m_feetMessage->footstep_data_list[stepIndex].predicted_contact_points_2d[v].y = vertex.y;
+            bool leftIsSwinging  = m_phases[i].getPhaseType() == StepUpPlanner::PhaseType::SINGLE_SUPPORT_RIGHT;
+            bool rightIsSwinging = m_phases[i].getPhaseType() == StepUpPlanner::PhaseType::SINGLE_SUPPORT_LEFT;
+
+            if (leftWasSwinging && !leftIsSwinging) {
+                m_feetMessage->footstep_data_list[stepIndex].robot_side = m_feetMessage->footstep_data_list[stepIndex].ROBOT_SIDE_LEFT;
+                m_feetMessage->footstep_data_list[stepIndex].location.x = m_phases[i].leftPosition(0);
+                m_feetMessage->footstep_data_list[stepIndex].location.y = m_phases[i].leftPosition(1);
+                m_feetMessage->footstep_data_list[stepIndex].location.z = m_phases[i].leftPosition(2);
+
+                m_feetMessage->footstep_data_list[stepIndex].orientation.w = m_phases[i].leftRotation().asQuaternion(0);
+                m_feetMessage->footstep_data_list[stepIndex].orientation.x = m_phases[i].leftRotation().asQuaternion(1);
+                m_feetMessage->footstep_data_list[stepIndex].orientation.y = m_phases[i].leftRotation().asQuaternion(2);
+                m_feetMessage->footstep_data_list[stepIndex].orientation.z = m_phases[i].leftRotation().asQuaternion(3);
+
+                m_feetMessage->footstep_data_list[stepIndex].predicted_contact_points_2d.resize(
+                    m_phases[i].getLeftStep().getVertices().size());
+                for (size_t v = 0; v < m_phases[i].getLeftStep().getVertices().size(); ++v) {
+                    const StepUpPlanner::Vertex& vertex = m_phases[i].getLeftStep().getVertices()[v];
+
+                    m_feetMessage->footstep_data_list[stepIndex].predicted_contact_points_2d[v].x = vertex.x;
+                    m_feetMessage->footstep_data_list[stepIndex].predicted_contact_points_2d[v].y = vertex.y;
+                }
+
+                stepIndex++;
             }
 
-            stepIndex++;
-        } else if (m_phases[i].getPhaseType() == StepUpPlanner::PhaseType::SINGLE_SUPPORT_RIGHT) {
-            m_feetMessage->footstep_data_list[stepIndex].swing_duration = static_cast<double>(m_phases[i].duration());
-            ++i;
-            m_feetMessage->footstep_data_list[stepIndex].robot_side = m_feetMessage->footstep_data_list[stepIndex].ROBOT_SIDE_RIGHT;
-            m_feetMessage->footstep_data_list[stepIndex].location.x = m_phases[i].rightPosition(0);
-            m_feetMessage->footstep_data_list[stepIndex].location.y = m_phases[i].rightPosition(1);
-            m_feetMessage->footstep_data_list[stepIndex].location.z = m_phases[i].rightPosition(2);
+            if (rightWasSwinging && !rightIsSwinging) {
+                m_feetMessage->footstep_data_list[stepIndex].robot_side = m_feetMessage->footstep_data_list[stepIndex].ROBOT_SIDE_RIGHT;
 
-            m_feetMessage->footstep_data_list[stepIndex].orientation.w = m_phases[i].rightRotation().asQuaternion(0);
-            m_feetMessage->footstep_data_list[stepIndex].orientation.x = m_phases[i].rightRotation().asQuaternion(1);
-            m_feetMessage->footstep_data_list[stepIndex].orientation.y = m_phases[i].rightRotation().asQuaternion(2);
-            m_feetMessage->footstep_data_list[stepIndex].orientation.z = m_phases[i].rightRotation().asQuaternion(3);
+                m_feetMessage->footstep_data_list[stepIndex].location.x = m_phases[i].rightPosition(0);
+                m_feetMessage->footstep_data_list[stepIndex].location.y = m_phases[i].rightPosition(1);
+                m_feetMessage->footstep_data_list[stepIndex].location.z = m_phases[i].rightPosition(2);
 
-            m_feetMessage->footstep_data_list[stepIndex].predicted_contact_points_2d.resize(
-                m_phases[i].getRightStep().getVertices().size());
-            for (size_t v = 0; v < m_phases[i].getRightStep().getVertices().size(); ++v) {
-                const StepUpPlanner::Vertex& vertex = m_phases[i].getRightStep().getVertices()[v];
+                m_feetMessage->footstep_data_list[stepIndex].orientation.w = m_phases[i].rightRotation().asQuaternion(0);
+                m_feetMessage->footstep_data_list[stepIndex].orientation.x = m_phases[i].rightRotation().asQuaternion(1);
+                m_feetMessage->footstep_data_list[stepIndex].orientation.y = m_phases[i].rightRotation().asQuaternion(2);
+                m_feetMessage->footstep_data_list[stepIndex].orientation.z = m_phases[i].rightRotation().asQuaternion(3);
 
-                m_feetMessage->footstep_data_list[stepIndex].predicted_contact_points_2d[v].x = vertex.x;
-                m_feetMessage->footstep_data_list[stepIndex].predicted_contact_points_2d[v].y = vertex.y;
+                m_feetMessage->footstep_data_list[stepIndex].predicted_contact_points_2d.resize(
+                    m_phases[i].getRightStep().getVertices().size());
+                for (size_t v = 0; v < m_phases[i].getRightStep().getVertices().size(); ++v) {
+                    const StepUpPlanner::Vertex& vertex = m_phases[i].getRightStep().getVertices()[v];
+
+                    m_feetMessage->footstep_data_list[stepIndex].predicted_contact_points_2d[v].x = vertex.x;
+                    m_feetMessage->footstep_data_list[stepIndex].predicted_contact_points_2d[v].y = vertex.y;
+                }
+
+                stepIndex++;
             }
 
-            stepIndex++;
+            leftWasSwinging = leftIsSwinging;
+            rightWasSwinging = rightIsSwinging;
+        }
+
+        if (i != m_phases.size() - 1) {
+            if (m_phases[i].getPhaseType() == StepUpPlanner::PhaseType::DOUBLE_SUPPORT) {
+                m_feetMessage->footstep_data_list[stepIndex].transfer_duration = static_cast<double>(m_phases[i].duration());
+            } else if (m_phases[i].getPhaseType() == StepUpPlanner::PhaseType::SINGLE_SUPPORT_LEFT) {
+                m_feetMessage->footstep_data_list[stepIndex].swing_duration = static_cast<double>(m_phases[i].duration());
+            } else if (m_phases[i].getPhaseType() == StepUpPlanner::PhaseType::SINGLE_SUPPORT_RIGHT) {
+                m_feetMessage->footstep_data_list[stepIndex].swing_duration = static_cast<double>(m_phases[i].duration());
+            }
         }
     }
 
