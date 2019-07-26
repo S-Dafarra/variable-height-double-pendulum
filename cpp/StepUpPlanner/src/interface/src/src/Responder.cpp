@@ -433,6 +433,12 @@ void StepUpPlanner::Responder::sendCenterOfMassTrajectoryMessages()
         double dT = static_cast<double>(m_phases[p].duration()) / phaseLength;
         size_t pointIndex = 0;
 
+        if (!p) {
+            time = 0;
+        } else {
+            time = dT;
+        }
+
         for (size_t m = 0; m < m_CoMMessagesPerPhase; ++m) {
             size_t messagesElements;
             if (m == m_CoMMessagesPerPhase - 1) {
