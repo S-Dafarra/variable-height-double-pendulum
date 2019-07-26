@@ -189,6 +189,21 @@ void StepUpPlanner::Plotter::plotAll(const std::vector<Phase> &phases)
     }
 }
 
+void StepUpPlanner::Plotter::drawAll()
+{
+    for (auto& plot : m_plots) {
+        if (plot.second.figureNumber() >= 0) {
+            if (matplotlibcpp::fignum_exists(plot.second.figureNumber())) {
+                matplotlibcpp::figure(plot.second.figureNumber());
+                matplotlibcpp::draw();
+                matplotlibcpp::pause(0.001);
+            } else {
+                plot.second.figureNumber() = -1;
+            }
+        }
+    }
+}
+
 StepUpPlanner::Plotter::Plotter()
 { }
 
@@ -199,8 +214,18 @@ StepUpPlanner::Plotter::~Plotter()
 
 void StepUpPlanner::Plotter::plotFullSolution(const std::vector<StepUpPlanner::Phase> &phases)
 {
+
     plotAll(phases);
-    matplotlibcpp::show(false);
+    for (auto& plot : m_plots) {
+        if (plot.second.figureNumber() >= 0) {
+            matplotlibcpp::figure(plot.second.figureNumber());
+            matplotlibcpp::ion();
+            matplotlibcpp::show();
+            matplotlibcpp::draw();
+            matplotlibcpp::pause(0.001);
+        }
+    }
+
 }
 
 void StepUpPlanner::Plotter::plotFullSolutionBlocking(const std::vector<Phase> &phases)

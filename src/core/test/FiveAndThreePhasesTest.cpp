@@ -1,6 +1,8 @@
 #include <StepUpPlanner/Solver.h>
 #include <StepUpPlanner/Plotter.h>
 #include <cassert>
+#include <future>
+#include <thread>
 
 #define ASSERT_IS_TRUE(prop) assertTrue(prop,__FILE__,__LINE__)
 
@@ -110,8 +112,13 @@ int main() {
 
     plotter.plotFullSolution(phases);
 
+    std::future<int> future = std::async(std::launch::async, getchar);
+
     std::cerr << "Press a button to continue..." << std::endl;
-    getchar();
+    while (future.wait_for(std::chrono::microseconds(1)) != std::future_status::ready) {
+        plotter.drawAll();
+    }
+
     std::cerr << "Closing figs." << std::endl;
     plotter.closeAll();
 
@@ -151,9 +158,12 @@ int main() {
     ASSERT_IS_TRUE(ok);
 
     plotter.plotFullSolution(phases);
+    future = std::async(std::launch::async, getchar);
 
-    std::cerr << "Press a button to close figures..." << std::endl;
-    getchar();
+    std::cerr << "Press a button to continue..." << std::endl;
+    while (future.wait_for(std::chrono::microseconds(1)) != std::future_status::ready) {
+        plotter.drawAll();
+    }
     std::cerr << "Closing figs." << std::endl;
 
     plotter.closeAll();

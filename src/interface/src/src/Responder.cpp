@@ -789,3 +789,8 @@ StepUpPlanner::Responder::Responder()
     m_feetMessagePublisher = nullptr;
 }
 
+void StepUpPlanner::Responder::drawFigures()
+{
+    m_plotter.drawAll();
+}
+

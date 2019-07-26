@@ -84,6 +84,8 @@ public:
 
     Responder();
 
+    void drawFigures();
+
 };
 
 

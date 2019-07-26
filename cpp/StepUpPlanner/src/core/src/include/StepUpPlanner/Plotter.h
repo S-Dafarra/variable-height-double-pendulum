@@ -5,6 +5,8 @@
 #include <vector>
 #include <map>
 #include <string>
+#include <thread>
+#include <atomic>
 
 namespace StepUpPlanner {
     class Plotter;
@@ -57,6 +59,8 @@ public:
     ~Plotter();
 
     void plotFullSolution(const std::vector<StepUpPlanner::Phase>& phases);
+
+    void drawAll();
 
     void plotFullSolutionBlocking(const std::vector<StepUpPlanner::Phase>& phases);
 

@@ -1,3 +1,9 @@
+# linux needs to explicitly ask for pthreads
+if (UNIX AND NOT APPLE)
+  set(THREADS_PREFER_PTHREAD_FLAG ON)
+  find_package(Threads REQUIRED)
+endif()
+
 # adding support for checking the tests with valgrind
 if(RUN_VALGRIND_TESTS)
      find_package(Valgrind REQUIRED)
@@ -21,7 +27,12 @@ macro(add_sup_test classname)
     set(testbinary ${classname}UnitTest)
     set(testname   UnitTest${classname})
     add_executable(${testbinary} ${testsrc})
-    target_link_libraries(${testbinary} PRIVATE step_up_planner::core)
+    if (UNIX AND NOT APPLE)
+        target_link_libraries(${testbinary} PRIVATE step_up_planner::core Threads::Threads)
+    else()
+        target_link_libraries(${testbinary} PRIVATE step_up_planner::core)
+    endif()
+
     add_test(NAME ${testname} COMMAND ${testbinary})
 
     if(RUN_VALGRIND_TESTS)
