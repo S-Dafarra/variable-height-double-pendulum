@@ -66,6 +66,8 @@ void StepUpPlanner::Responder::respond(const controller_msgs::msg::StepUpPlanner
 {
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
+    m_plotter.closeAll();
+
     StepUpPlanner::State initialState;
     StepUpPlanner::References references;
 
@@ -96,7 +98,6 @@ void StepUpPlanner::Responder::respond(const controller_msgs::msg::StepUpPlanner
     std::string duration = std::to_string((std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count())/1000.0);
     RCLCPP_INFO(this->get_logger(), "[processParameters] Respond published (" + duration + "[s]).");
 
-    m_plotter.closeAll();
     m_plotter.plotFullSolution(m_phases);
 }
 
@@ -444,6 +445,8 @@ void StepUpPlanner::Responder::processParameters(const controller_msgs::msg::Ste
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::string duration = std::to_string((std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count())/1000.0);
     RCLCPP_INFO(this->get_logger(), "[processParameters] Parameters set correctly (" + duration + "[s]).");
+
+    m_plotter.closeAll();
 }
 
 void StepUpPlanner::Responder::sendErrorMessage(StepUpPlanner::Responder::Errors errorType, const std::string &errorMessage)
