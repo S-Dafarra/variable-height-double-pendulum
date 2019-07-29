@@ -510,6 +510,8 @@ void StepUpPlanner::Responder::sendFootStepDataListMessage()
         m_feetMessage->final_transfer_duration = 1e-4;
     }
 
+    m_feetMessage->execution_timing = controller_msgs::msg::FootstepDataListMessage::EXECUTION_TIMING_CONTROL_ABSOLUTE_TIMINGS;
+
     bool leftWasSwinging  = m_phases.begin()->getPhaseType() == StepUpPlanner::PhaseType::SINGLE_SUPPORT_RIGHT;
     bool rightWasSwinging = m_phases.begin()->getPhaseType() == StepUpPlanner::PhaseType::SINGLE_SUPPORT_LEFT;
     size_t stepIndex = 0;
@@ -532,14 +534,14 @@ void StepUpPlanner::Responder::sendFootStepDataListMessage()
                 m_feetMessage->footstep_data_list[stepIndex].orientation.y = m_phases[i].leftRotation().asQuaternion(2);
                 m_feetMessage->footstep_data_list[stepIndex].orientation.z = m_phases[i].leftRotation().asQuaternion(3);
 
-                m_feetMessage->footstep_data_list[stepIndex].predicted_contact_points_2d.resize(
-                    m_phases[i].getLeftStep().getVertices().size());
-                for (size_t v = 0; v < m_phases[i].getLeftStep().getVertices().size(); ++v) {
-                    const StepUpPlanner::Vertex& vertex = m_phases[i].getLeftStep().getVertices()[v];
+//                m_feetMessage->footstep_data_list[stepIndex].predicted_contact_points_2d.resize(
+//                    m_phases[i].getLeftStep().getVertices().size());
+//                for (size_t v = 0; v < m_phases[i].getLeftStep().getVertices().size(); ++v) {
+//                    const StepUpPlanner::Vertex& vertex = m_phases[i].getLeftStep().getVertices()[v];
 
-                    m_feetMessage->footstep_data_list[stepIndex].predicted_contact_points_2d[v].x = vertex.x;
-                    m_feetMessage->footstep_data_list[stepIndex].predicted_contact_points_2d[v].y = vertex.y;
-                }
+//                    m_feetMessage->footstep_data_list[stepIndex].predicted_contact_points_2d[v].x = vertex.x;
+//                    m_feetMessage->footstep_data_list[stepIndex].predicted_contact_points_2d[v].y = vertex.y;
+//                }
 
                 stepIndex++;
             }
@@ -556,14 +558,14 @@ void StepUpPlanner::Responder::sendFootStepDataListMessage()
                 m_feetMessage->footstep_data_list[stepIndex].orientation.y = m_phases[i].rightRotation().asQuaternion(2);
                 m_feetMessage->footstep_data_list[stepIndex].orientation.z = m_phases[i].rightRotation().asQuaternion(3);
 
-                m_feetMessage->footstep_data_list[stepIndex].predicted_contact_points_2d.resize(
-                    m_phases[i].getRightStep().getVertices().size());
-                for (size_t v = 0; v < m_phases[i].getRightStep().getVertices().size(); ++v) {
-                    const StepUpPlanner::Vertex& vertex = m_phases[i].getRightStep().getVertices()[v];
+//                m_feetMessage->footstep_data_list[stepIndex].predicted_contact_points_2d.resize(
+//                    m_phases[i].getRightStep().getVertices().size());
+//                for (size_t v = 0; v < m_phases[i].getRightStep().getVertices().size(); ++v) {
+//                    const StepUpPlanner::Vertex& vertex = m_phases[i].getRightStep().getVertices()[v];
 
-                    m_feetMessage->footstep_data_list[stepIndex].predicted_contact_points_2d[v].x = vertex.x;
-                    m_feetMessage->footstep_data_list[stepIndex].predicted_contact_points_2d[v].y = vertex.y;
-                }
+//                    m_feetMessage->footstep_data_list[stepIndex].predicted_contact_points_2d[v].x = vertex.x;
+//                    m_feetMessage->footstep_data_list[stepIndex].predicted_contact_points_2d[v].y = vertex.y;
+//                }
 
                 stepIndex++;
             }
