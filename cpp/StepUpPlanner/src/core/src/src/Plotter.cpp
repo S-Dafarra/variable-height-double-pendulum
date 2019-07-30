@@ -123,10 +123,10 @@ void StepUpPlanner::Plotter::fillPlotsData(const std::vector<StepUpPlanner::Phas
 
     ResizeAndFill3Dplot(n, [phases, phaseLength](size_t i, size_t j)
                         {return phases[i / phaseLength].controls()[i % phaseLength].acceleration(j);},
-                        m_plots["CoM Acceleration (without gravity)"]);
+                        m_plots["CoM Acceleration"]);
 
-    m_plots["CoM Acceleration (without gravity)"].xLabel() = "t [s]";
-    m_plots["CoM Acceleration (without gravity)"].yLabel() = "[m/s^2]";
+    m_plots["CoM Acceleration"].xLabel() = "t [s]";
+    m_plots["CoM Acceleration"].yLabel() = "[m/s^2]";
 
     ResizeAndFillVector(n, [phases, phaseLength](size_t i)
                         {return static_cast<double>(phases[i / phaseLength].controls()[i % phaseLength].left().multiplier());},
