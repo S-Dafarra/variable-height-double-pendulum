@@ -11,10 +11,8 @@ casadi::Function StepUpPlanner::Solver::getIntegratorDynamics()
 
     casadi::MX p = x(casadi::Slice(0, 3));
     casadi::MX v = x(casadi::Slice(3, 6));
-    casadi::DM g = casadi::DM::zeros(3,1);
-    g(2) = -9.81;
-    casadi::MX rhs = casadi::MX::vertcat({p + dT * (v + 0.5 * dT * (a + g)),
-                                          v + dT * (a + g)});
+    casadi::MX rhs = casadi::MX::vertcat({p + dT * (v + 0.5 * dT * (a)),
+                                          v + dT * (a)});
 
     return casadi::Function("Integrator", {x, a, dT}, {rhs});
 }
@@ -88,8 +86,10 @@ casadi::Function StepUpPlanner::Solver::getAccelerationConsistencyConstraintFunc
     casadi::MX ur = U(5);
     casadi::MX rightCoPInWorld = casadi::MX::mtimes(rightRotation, casadi::MX::vertcat({footCoPR, 0}));
 
+    casadi::DM g = casadi::DM::zeros(3,1);
+    g(2) = 9.81;
 
-    casadi::MX constraint = A;
+    casadi::MX constraint = A + g;
 
     if (isActive.left) {
         constraint -= (currentPosition - (leftLocation + leftCoPInWorld)) * ul;
@@ -454,6 +454,13 @@ bool StepUpPlanner::Solver::solve(const StepUpPlanner::State &initialState, cons
         for (casadi_int k = 1; k < npoints + 1; ++k) {
             interpolatedPosition = initPos + m_linSpacedPoints(k) * (refPos - initPos);
             m_opti.set_initial(m_X(casadi::Slice(0,3), k), interpolatedPosition);
+        }
+
+        casadi::DM g = casadi::DM::zeros(3,1);
+        g(2) = -9.81;
+
+        for (casadi_int k = 0; k < npoints; ++k) {
+            m_opti.set_initial(m_A(casadi::Slice(), k), g);
         }
 
         m_opti.set_initial(m_uMax, m_useMaxU ? 30.0 : 0.0);
