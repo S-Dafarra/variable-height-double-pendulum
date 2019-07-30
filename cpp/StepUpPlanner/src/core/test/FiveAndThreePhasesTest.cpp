@@ -69,6 +69,7 @@ int main() {
     weights.finalStateError = 10;
     weights.controlVariations = 1.0/N;
     weights.durationsDifference = 5.0/phases.size();
+    weights.maxTorques = 0.1;
 
     StepUpPlanner::Solver solver(phases, settings);
 

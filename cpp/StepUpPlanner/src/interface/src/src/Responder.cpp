@@ -205,6 +205,7 @@ bool StepUpPlanner::Responder::processPlannerSettings(const controller_msgs::msg
     auto& messageWeights = msg->cost_weights;
     weights.cop = messageWeights.cop;
     weights.torques = messageWeights.torques;
+    weights.maxTorques = messageWeights.max_torques;
     weights.multipliers = messageWeights.control_multipliers;
     weights.finalControl = messageWeights.final_control;
     weights.maxMultiplier = messageWeights.max_control_multiplier;

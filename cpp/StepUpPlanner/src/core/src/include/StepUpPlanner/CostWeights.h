@@ -16,6 +16,7 @@ public:
     double controlVariations;
     double finalControl;
     double torques;
+    double maxTorques;
 
     CostWeights();
 };

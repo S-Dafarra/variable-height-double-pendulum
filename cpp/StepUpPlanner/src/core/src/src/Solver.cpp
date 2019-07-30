@@ -163,15 +163,27 @@ void StepUpPlanner::Solver::setupOpti()
     casadi_int phaseLength = static_cast<casadi_int>(m_settings.phaseLength());
     casadi_int N = numberOfPhases * phaseLength;
 
+    m_useMaxU = m_settings.costWeights().maxMultiplier > 0;
+    m_useMaxTau = m_settings.costWeights().maxTorques > 0;
+
     m_X = m_opti.variable(6, N + 1);
     m_A = m_opti.variable(3,N);
     m_U = m_opti.variable(6, N);
     m_T = m_opti.variable(numberOfPhases);
     m_uMax = m_opti.variable();
+    m_tauMax = m_opti.variable();
+
+    if (!m_useMaxU) {
+        m_opti.subject_to(m_uMax == 0);
+    }
+
+    if (!m_useMaxTau) {
+        m_opti.subject_to(m_tauMax == 0);
+    }
 
     m_opti.subject_to(m_X(Sl(), 0) == m_initialStateParameter);
 
-    casadi::MX torquesCost = 0;
+    casadi::MX torquesCost = 0, leftTorques, rightTorques;
 
     for (casadi_int phase = 0; phase < numberOfPhases; ++phase) {
 
@@ -203,16 +215,36 @@ void StepUpPlanner::Solver::setupOpti()
 
             if (leftIsActive) {
                 m_opti.subject_to(casadi::MX::vertcat(leftFootConstraints({m_X(Sl(), k + 1), m_U(Sl(0,3), k), leftPosition, leftRotation})) <= leftFootBounds);
-                m_opti.subject_to(m_U(2, k) - m_uMax <= 0);
-                torquesCost += casadi::MX::pow(((m_X(2, k + 1) - leftPosition(2) - m_desiredLegLengthParameter) * m_U(2, k)), 2);
+
+                if (m_useMaxU) {
+                    m_opti.subject_to(m_U(2, k) - m_uMax <= 0);
+                }
+
+                leftTorques = casadi::MX::pow(((m_X(2, k + 1) - leftPosition(2) - m_desiredLegLengthParameter) * m_U(2, k)), 2);
+                torquesCost += leftTorques;
+
+                if (m_useMaxTau) {
+                    m_opti.subject_to(leftTorques  - m_tauMax <= 0);
+                }
+
             } else {
                 m_opti.subject_to(m_U(Sl(0,3), k) == casadi::MX::zeros(3,1));
             }
 
             if (rightIsActive) {
                 m_opti.subject_to(casadi::MX::vertcat(rightFootConstraints({m_X(Sl(), k + 1), m_U(Sl(3,6), k), rightPosition, rightRotation})) <= rightFootBounds);
-                m_opti.subject_to(m_U(5, k) - m_uMax <= 0);
-                torquesCost += casadi::MX::pow(((m_X(2, k + 1) - rightPosition(2) - m_desiredLegLengthParameter) * m_U(5, k)), 2);
+
+                if (m_useMaxU) {
+                    m_opti.subject_to(m_U(5, k) - m_uMax <= 0);
+                }
+
+                rightTorques = casadi::MX::pow(((m_X(2, k + 1) - rightPosition(2) - m_desiredLegLengthParameter) * m_U(5, k)), 2);
+                torquesCost += rightTorques;
+
+                if (m_useMaxTau) {
+                    m_opti.subject_to(rightTorques  - m_tauMax <= 0);
+                }
+
             } else {
                 m_opti.subject_to(m_U(Sl(3,6), k) == casadi::MX::zeros(3,1));
             }
@@ -235,6 +267,7 @@ void StepUpPlanner::Solver::setupOpti()
     costFunction += w.controlVariations * (casadi::MX::sumsqr(m_U(Sl(), Sl(1, N)) - m_U(Sl(), Sl(0, N-1))));
     costFunction += w.finalControl * casadi::MX::sumsqr(m_U(Sl(), N-1) - m_referenceControlParameter);
     costFunction += w.torques * torquesCost;
+    costFunction += w.maxTorques * m_tauMax;
 
     m_opti.minimize(costFunction);
 }
@@ -275,9 +308,9 @@ bool StepUpPlanner::Solver::setupProblem(const std::vector<StepUpPlanner::Phase>
     casadi::Dict ipoptOptions;
 
     casadiOptions["expand"] = true;
-    unsigned int solverVerbosity = m_settings.solverVerbosity();
+    unsigned long solverVerbosity = m_settings.solverVerbosity();
     if (solverVerbosity) {
-        casadi_int ipoptVerbosity = solverVerbosity - 1;
+        casadi_int ipoptVerbosity = static_cast<long long>(solverVerbosity - 1);
         ipoptOptions["print_level"] = ipoptVerbosity;
         casadiOptions["print_time"] = true;
     } else {
@@ -422,6 +455,9 @@ bool StepUpPlanner::Solver::solve(const StepUpPlanner::State &initialState, cons
             interpolatedPosition = initPos + m_linSpacedPoints(k) * (refPos - initPos);
             m_opti.set_initial(m_X(casadi::Slice(0,3), k), interpolatedPosition);
         }
+
+        m_opti.set_initial(m_uMax, m_useMaxU ? 30.0 : 0.0);
+        m_opti.set_initial(m_tauMax, m_useMaxTau ? 100.0 : 0.0);
     }
 
     m_solverState = SolverState::PROBLEM_SET;

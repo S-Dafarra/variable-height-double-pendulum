@@ -201,6 +201,7 @@ controller_msgs::msg::StepUpPlannerParametersMessage::SharedPtr fillParametersMe
 
     weights.cop = 10.0/N;
     weights.torques = 1.0/N;
+    weights.max_torques = 0.1;
     weights.control_multipliers = 0.1/N;
     weights.final_control = 1.0;
     weights.max_control_multiplier = 0.1;

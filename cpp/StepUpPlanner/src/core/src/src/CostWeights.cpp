@@ -8,4 +8,5 @@ StepUpPlanner::CostWeights::CostWeights()
       , controlVariations(0.0)
       , finalControl(0.0)
       , torques(0.0)
+      , maxTorques(0.0)
 {}
