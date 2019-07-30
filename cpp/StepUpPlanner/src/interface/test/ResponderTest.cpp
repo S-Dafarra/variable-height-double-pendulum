@@ -160,7 +160,10 @@ controller_msgs::msg::StepUpPlannerParametersMessage::SharedPtr fillParametersMe
         leftSteps[i].foot_vertices[3].x = -0.05;
         leftSteps[i].foot_vertices[3].y = 0.05;
 
+        leftSteps[i].scale = 0.9;
+
         rightSteps[i].set__foot_vertices(leftSteps[i].foot_vertices);
+        rightSteps[i].scale = 0.9;
     }
 
     auto stand = leftSteps[0].STAND;

@@ -117,7 +117,7 @@ bool StepUpPlanner::Responder::processPhaseSettings(const controller_msgs::msg::
                 vertices[vertex].y = leftParameters.foot_vertices[vertex].y;
             }
 
-            bool ok = leftStep.setVertices(vertices);
+            bool ok = leftStep.setVertices(vertices, leftParameters.scale);
 
             if (!ok) {
                 sendErrorMessage(Errors::PARAMETERS_ERROR,
@@ -139,7 +139,7 @@ bool StepUpPlanner::Responder::processPhaseSettings(const controller_msgs::msg::
                 vertices[vertex].y = rightParameters.foot_vertices[vertex].y;
             }
 
-            bool ok = rightStep.setVertices(vertices);
+            bool ok = rightStep.setVertices(vertices, rightParameters.scale);
 
             if (!ok) {
                 sendErrorMessage(Errors::PARAMETERS_ERROR,
@@ -535,14 +535,14 @@ void StepUpPlanner::Responder::sendFootStepDataListMessage()
                 m_feetMessage->footstep_data_list[stepIndex].orientation.y = m_phases[i].leftRotation().asQuaternion(2);
                 m_feetMessage->footstep_data_list[stepIndex].orientation.z = m_phases[i].leftRotation().asQuaternion(3);
 
-//                m_feetMessage->footstep_data_list[stepIndex].predicted_contact_points_2d.resize(
-//                    m_phases[i].getLeftStep().getVertices().size());
-//                for (size_t v = 0; v < m_phases[i].getLeftStep().getVertices().size(); ++v) {
-//                    const StepUpPlanner::Vertex& vertex = m_phases[i].getLeftStep().getVertices()[v];
+                m_feetMessage->footstep_data_list[stepIndex].predicted_contact_points_2d.resize(
+                    m_phases[i].getLeftStep().getOriginalVertices().size());
+                for (size_t v = 0; v < m_phases[i].getLeftStep().getOriginalVertices().size(); ++v) {
+                    const StepUpPlanner::Vertex& vertex = m_phases[i].getLeftStep().getOriginalVertices()[v];
 
-//                    m_feetMessage->footstep_data_list[stepIndex].predicted_contact_points_2d[v].x = vertex.x;
-//                    m_feetMessage->footstep_data_list[stepIndex].predicted_contact_points_2d[v].y = vertex.y;
-//                }
+                    m_feetMessage->footstep_data_list[stepIndex].predicted_contact_points_2d[v].x = vertex.x;
+                    m_feetMessage->footstep_data_list[stepIndex].predicted_contact_points_2d[v].y = vertex.y;
+                }
 
                 stepIndex++;
             }
@@ -559,14 +559,14 @@ void StepUpPlanner::Responder::sendFootStepDataListMessage()
                 m_feetMessage->footstep_data_list[stepIndex].orientation.y = m_phases[i].rightRotation().asQuaternion(2);
                 m_feetMessage->footstep_data_list[stepIndex].orientation.z = m_phases[i].rightRotation().asQuaternion(3);
 
-//                m_feetMessage->footstep_data_list[stepIndex].predicted_contact_points_2d.resize(
-//                    m_phases[i].getRightStep().getVertices().size());
-//                for (size_t v = 0; v < m_phases[i].getRightStep().getVertices().size(); ++v) {
-//                    const StepUpPlanner::Vertex& vertex = m_phases[i].getRightStep().getVertices()[v];
+                m_feetMessage->footstep_data_list[stepIndex].predicted_contact_points_2d.resize(
+                    m_phases[i].getRightStep().getOriginalVertices().size());
+                for (size_t v = 0; v < m_phases[i].getRightStep().getOriginalVertices().size(); ++v) {
+                    const StepUpPlanner::Vertex& vertex = m_phases[i].getRightStep().getOriginalVertices()[v];
 
-//                    m_feetMessage->footstep_data_list[stepIndex].predicted_contact_points_2d[v].x = vertex.x;
-//                    m_feetMessage->footstep_data_list[stepIndex].predicted_contact_points_2d[v].y = vertex.y;
-//                }
+                    m_feetMessage->footstep_data_list[stepIndex].predicted_contact_points_2d[v].x = vertex.x;
+                    m_feetMessage->footstep_data_list[stepIndex].predicted_contact_points_2d[v].y = vertex.y;
+                }
 
                 stepIndex++;
             }

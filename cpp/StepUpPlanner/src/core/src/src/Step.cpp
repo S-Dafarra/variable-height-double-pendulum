@@ -3,6 +3,36 @@
 #include <iostream>
 #include <cmath>
 
+void StepUpPlanner::Step::scaleFootVertices(double scale, const std::vector<StepUpPlanner::Vertex> &vertices)
+{
+    if (vertices.empty()) {
+        return;
+    }
+
+    m_scaledFootVertices.resize(vertices.size());
+
+    StepUpPlanner::Vertex footCenter;
+
+    footCenter.x = 0.0;
+    footCenter.y = 0.0;
+
+    for (auto& vertex : vertices) {
+        footCenter.x += vertex.x;
+        footCenter.y += vertex.y;
+    }
+    footCenter.x /= vertices.size();
+    footCenter.y /= vertices.size();
+
+    double k_x = footCenter.x * (1.0 - scale);
+    double k_y = footCenter.y * (1.0 - scale);
+
+    for (size_t i = 0; i < vertices.size(); ++i) {
+        m_scaledFootVertices[i].x = k_x + scale * vertices[i].x;
+        m_scaledFootVertices[i].y = k_y + scale * vertices[i].y;
+    }
+
+}
+
 bool StepUpPlanner::Step::computeCoPConstraints(const std::vector<Vertex> &vertices)
 {
     if (vertices.size() < 3) {
@@ -78,14 +108,19 @@ bool StepUpPlanner::Step::computeCoPConstraints(const std::vector<Vertex> &verti
 
 StepUpPlanner::Step::Step()
     : m_position(3,1)
+      , m_scaleFactor(1.0)
 { }
 
 StepUpPlanner::Step::Step(double px, double py, double pz)
+    : m_position(3,1)
+      , m_scaleFactor(1.0)
 {
     setPosition(px, py, pz);
 }
 
 StepUpPlanner::Step::Step(double px, double py, double pz, const std::vector<Vertex> &vertices)
+    : m_position(3,1)
+      , m_scaleFactor(1.0)
 {
     setPosition(px, py, pz);
     bool ok = setVertices(vertices);
@@ -102,21 +137,35 @@ void StepUpPlanner::Step::setPosition(double px, double py, double pz)
     m_position(2) = pz;
 }
 
-bool StepUpPlanner::Step::setVertices(const std::vector<Vertex> &vertices)
+bool StepUpPlanner::Step::setVertices(const std::vector<Vertex> &vertices, double scale)
 {
-    bool ok = computeCoPConstraints(vertices);
-    if (!ok) {
-        std::cerr << "[StepUpPlanner::Step::Step] Failed to compute the CoP constraint function." << std::endl;
+    if (scale < 0.0) {
+        std::cerr << "[StepUpPlanner::Step::Step] The scale is supposed to be positive." << std::endl;
         return false;
     }
+
+    scaleFootVertices(scale, vertices);
+
+    bool ok = computeCoPConstraints(m_scaledFootVertices);
+    if (!ok) {
+        std::cerr << "[StepUpPlanner::Step::Step] Failed to compute the CoP constraint function." << std::endl;
+        scaleFootVertices(m_scaleFactor, vertices);
+        return false;
+    }
+    m_scaleFactor = scale;
     m_footVertices = vertices;
 
     return true;
 }
 
-const std::vector<StepUpPlanner::Vertex> &StepUpPlanner::Step::getVertices() const
+const std::vector<StepUpPlanner::Vertex> &StepUpPlanner::Step::getOriginalVertices() const
 {
     return m_footVertices;
+}
+
+const std::vector<StepUpPlanner::Vertex> &StepUpPlanner::Step::getScaledVertices() const
+{
+    return m_scaledFootVertices;
 }
 
 casadi::DM &StepUpPlanner::Step::position()
@@ -153,6 +202,8 @@ void StepUpPlanner::Step::clear()
 {
     setPosition(0.0, 0.0, 0.0);
     m_footVertices.clear();
+    m_scaledFootVertices.clear();
+    m_scaleFactor = 1.0;
     m_edgeConstraints = casadi::MX();
     m_copBounds = casadi::DM();
     m_copConstraints = casadi::Function();

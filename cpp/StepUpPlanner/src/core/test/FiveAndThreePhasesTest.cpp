@@ -18,21 +18,21 @@ int main() {
     StepUpPlanner::Step l1, r1, l2, r2;
 
     l1.setPosition(0.0, 0.15, 0.0);
-    l1.setVertices({{0.05, 0.05}, {0.05, -0.05}, {-0.05, -0.05}, {-0.05, 0.05}});
+    l1.setVertices({{0.05, 0.05}, {0.05, -0.05}, {-0.05, -0.05}, {-0.05, 0.05}}, 0.9);
     ASSERT_IS_TRUE(!l1.getCoPConstraintsFunction().is_null());
 
     r1.setPosition(0.0, -0.15, 0.0);
-    r1.setVertices({{0.05, 0.05}, {0.05, -0.05}, {-0.05, -0.05}, {-0.05, 0.05}});
+    r1.setVertices({{0.05, 0.05}, {0.05, -0.05}, {-0.05, -0.05}, {-0.05, 0.05}}, 0.9);
     ASSERT_IS_TRUE(!r1.getCoPConstraintsFunction().is_null());
 
 
     l2.setPosition(0.6, 0.15, 0.4);
-    l2.setVertices({{0.05, 0.05}, {0.05, -0.05}, {-0.05, -0.05}, {-0.05, 0.05}});
+    l2.setVertices({{0.05, 0.05}, {0.05, -0.05}, {-0.05, -0.05}, {-0.05, 0.05}}, 0.9);
     ASSERT_IS_TRUE(!l2.getCoPConstraintsFunction().is_null());
 
 
     r2.setPosition(0.6, -0.15, 0.4);
-    r2.setVertices({{0.05, 0.05}, {0.05, -0.05}, {-0.05, -0.05}, {-0.05, 0.05}});
+    r2.setVertices({{0.05, 0.05}, {0.05, -0.05}, {-0.05, -0.05}, {-0.05, 0.05}}, 0.9);
     ASSERT_IS_TRUE(!r2.getCoPConstraintsFunction().is_null());
 
 

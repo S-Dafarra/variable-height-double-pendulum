@@ -20,10 +20,14 @@ class StepUpPlanner::Step {
     casadi::DM m_position;
     StepUpPlanner::Rotation m_rotation;
     std::vector<StepUpPlanner::Vertex> m_footVertices;
+    std::vector<StepUpPlanner::Vertex> m_scaledFootVertices;
+    double m_scaleFactor;
     casadi::MX m_edgeConstraints;
 
     casadi::DM m_copBounds;
     casadi::Function m_copConstraints;
+
+    void scaleFootVertices(double scale, const std::vector<StepUpPlanner::Vertex>& vertices);
 
     bool computeCoPConstraints(const std::vector<StepUpPlanner::Vertex>& vertices);
 
@@ -39,9 +43,11 @@ public:
 
     void setPosition(double px, double py, double pz);
 
-    bool setVertices(const std::vector<StepUpPlanner::Vertex>& vertices);
+    bool setVertices(const std::vector<StepUpPlanner::Vertex>& vertices, double scale = 1.0);
 
-    const std::vector<StepUpPlanner::Vertex>& getVertices() const;
+    const std::vector<StepUpPlanner::Vertex>& getOriginalVertices() const;
+
+    const std::vector<StepUpPlanner::Vertex>& getScaledVertices() const;
 
     casadi::DM &position();
 
