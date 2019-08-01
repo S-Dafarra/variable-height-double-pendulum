@@ -84,6 +84,8 @@ void StepUpPlanner::Responder::respond(const controller_msgs::msg::StepUpPlanner
 
     sendCenterOfMassTrajectoryMessages();
 
+    sendPelvisHeightTrajectoryMessages();
+
     sendFootStepDataListMessage();
 
     m_respondPublisher->publish(m_respondMessage);
@@ -152,6 +154,170 @@ bool StepUpPlanner::Responder::processPhaseSettings(const controller_msgs::msg::
         }
 
         m_phases[phase] = StepUpPlanner::Phase(leftPointer, rightPointer);
+    }
+
+    return true;
+}
+
+bool StepUpPlanner::Responder::processCoMMessagesSettings(const controller_msgs::msg::StepUpPlannerParametersMessage::SharedPtr msg, const Settings &settings)
+{
+    if (msg->send_com_messages || msg->include_com_messages) {
+
+        if (msg->send_com_messages) {
+            m_CoMMessagePublisher = this->create_publisher<controller_msgs::msg::CenterOfMassTrajectoryMessage>(msg->com_messages_topic);
+        } else {
+            m_CoMMessagePublisher = nullptr;
+        }
+        if (msg->max_com_message_length == 0) {
+            sendErrorMessage(Errors::PARAMETERS_ERROR,
+                             "The max_com_message_length is supposed to be a positive number.");
+            return false;
+        }
+
+        m_CoMMessagesPerPhase = static_cast<size_t>(std::ceil(settings.phaseLength() / static_cast<double>(msg->max_com_message_length)));
+        assert(m_CoMMessagesPerPhase > 0);
+
+        m_CoMMessages.clear();
+
+        for (size_t i = 0; i < m_phases.size() * m_CoMMessagesPerPhase; ++i) {
+            m_CoMMessages.push_back(std::make_shared<controller_msgs::msg::CenterOfMassTrajectoryMessage>());
+        }
+
+        if (msg->include_com_messages) {
+            m_respondMessage->com_messages.resize(m_CoMMessages.size());
+        } else {
+            m_respondMessage->com_messages.clear();
+        }
+
+    } else {
+        m_CoMMessagePublisher = nullptr;
+        m_respondMessage->com_messages.clear();
+    }
+
+    return true;
+}
+
+bool StepUpPlanner::Responder::processPelvisHeightMessagesSettings(
+    const controller_msgs::msg::StepUpPlannerParametersMessage::SharedPtr msg, const Settings &settings)
+{
+    if (msg->send_pelvis_height_messages || msg->include_pelvis_height_messages) {
+
+        if (msg->send_pelvis_height_messages) {
+            m_pelvisMessagePublisher =
+                this->create_publisher<controller_msgs::msg::PelvisHeightTrajectoryMessage>(msg->pelvis_height_messages_topic);
+        } else {
+            m_pelvisMessagePublisher = nullptr;
+        }
+        if (msg->max_pelvis_height_message_length == 0) {
+            sendErrorMessage(Errors::PARAMETERS_ERROR,
+                             "The max_pelvis_height_message_length is supposed to be a positive number.");
+            return false;
+        }
+
+        m_pelvisMessagesPerPhase =
+            static_cast<size_t>(std::ceil(settings.phaseLength() / static_cast<double>(msg->max_pelvis_height_message_length)));
+        assert(m_pelvisMessagesPerPhase > 0);
+
+        m_pelvisMessages.clear();
+
+        for (size_t i = 0; i < m_phases.size() * m_pelvisMessagesPerPhase; ++i) {
+            m_pelvisMessages.push_back(std::make_shared<controller_msgs::msg::PelvisHeightTrajectoryMessage>());
+        }
+
+        if (msg->include_pelvis_height_messages) {
+            m_respondMessage->pelvis_height_messages.resize(m_pelvisMessages.size());
+        } else {
+            m_respondMessage->pelvis_height_messages.clear();
+        }
+
+        m_pelvisHeightDelta = msg->pelvis_height_delta;
+
+    } else {
+        m_pelvisMessagePublisher = nullptr;
+        m_respondMessage->pelvis_height_messages.clear();
+    }
+
+    return true;
+}
+
+bool StepUpPlanner::Responder::processFootStepMessagesSettings(const controller_msgs::msg::StepUpPlannerParametersMessage::SharedPtr msg)
+{
+    if (msg->send_footstep_messages || msg->include_footstep_messages) {
+
+        if (m_phases.size() < 2) {
+            sendErrorMessage(Errors::PARAMETERS_ERROR,
+                             "Cannot send feet message if the phases are less than 2.");
+            return false;
+        }
+
+        if (m_phases.begin()->getPhaseType() == StepUpPlanner::PhaseType::FLYING) {
+            sendErrorMessage(Errors::PARAMETERS_ERROR,
+                             "Cannot send feet message if the first phase is a FLYING phase.");
+            return false;
+        }
+
+        for (size_t i = 0; i < m_phases.size(); ++i) {
+
+            if (m_phases[i].getPhaseType() == StepUpPlanner::PhaseType::FLYING) {
+                sendErrorMessage(Errors::PARAMETERS_ERROR,
+                                 "The FLYING phase is not supported when generating feet messages.");
+                return false;
+            }
+
+            if (i > 0 && m_phases[i].getPhaseType() == m_phases[i-1].getPhaseType()) {
+                sendErrorMessage(Errors::PARAMETERS_ERROR,
+                                 "Cannot send feet message if two consecutive phases are equal.");
+                return false;
+            }
+        }
+
+        if (msg->send_footstep_messages) {
+            m_feetMessagePublisher = this->create_publisher<controller_msgs::msg::FootstepDataListMessage>(msg->footstep_messages_topic);
+        } else {
+            m_feetMessagePublisher = nullptr;
+        }
+
+        m_feetMessage = std::make_shared<controller_msgs::msg::FootstepDataListMessage>();
+
+        bool leftWasSwinging  = m_phases.begin()->getPhaseType() == StepUpPlanner::PhaseType::SINGLE_SUPPORT_RIGHT;
+        bool rightWasSwinging = m_phases.begin()->getPhaseType() == StepUpPlanner::PhaseType::SINGLE_SUPPORT_LEFT;
+        size_t numberOfSteps = 0;
+
+        for (size_t i = 1; i < m_phases.size(); ++i) {
+            bool leftIsSwinging  = m_phases[i].getPhaseType() == StepUpPlanner::PhaseType::SINGLE_SUPPORT_RIGHT;
+            bool rightIsSwinging = m_phases[i].getPhaseType() == StepUpPlanner::PhaseType::SINGLE_SUPPORT_LEFT;
+
+            if (leftWasSwinging && !leftIsSwinging) {
+                numberOfSteps++;
+            }
+
+            if (rightWasSwinging && !rightIsSwinging) {
+                numberOfSteps++;
+            }
+
+            leftWasSwinging = leftIsSwinging;
+            rightWasSwinging = rightIsSwinging;
+        }
+
+        if (numberOfSteps == 0) {
+            sendErrorMessage(Errors::PARAMETERS_ERROR,
+                             "No footstep message can be sent given the desired walking phases.");
+            return false;
+        }
+
+        controller_msgs::msg::FootstepDataMessage templateStep;
+        templateStep.transfer_duration = 0.0;
+        m_feetMessage->footstep_data_list.resize(numberOfSteps, templateStep); //Initializing to zero all the transfer times
+
+        if (msg->include_footstep_messages) {
+            m_respondMessage->foostep_messages.resize(1);
+        } else {
+            m_respondMessage->foostep_messages.clear();
+        }
+
+    } else {
+        m_feetMessagePublisher = nullptr;
+        m_respondMessage->foostep_messages.clear();
     }
 
     return true;
@@ -237,115 +403,16 @@ void StepUpPlanner::Responder::processParameters(const controller_msgs::msg::Ste
         return;
     }
 
-    if (msg->send_com_messages || msg->include_com_messages) {
-
-        if (msg->send_com_messages) {
-            m_CoMMessagePublisher = this->create_publisher<controller_msgs::msg::CenterOfMassTrajectoryMessage>(msg->com_messages_topic);
-        } else {
-            m_CoMMessagePublisher = nullptr;
-        }
-        if (msg->max_com_message_length == 0) {
-            sendErrorMessage(Errors::PARAMETERS_ERROR,
-                             "The max_message_length is supposed to be a positive number.");
-            return;
-        }
-
-        m_CoMMessagesPerPhase = static_cast<size_t>(std::ceil(settings.phaseLength() / static_cast<double>(msg->max_com_message_length)));
-        assert(m_CoMMessagesPerPhase > 0);
-
-        m_CoMMessages.clear();
-
-        for (size_t i = 0; i < m_phases.size() * m_CoMMessagesPerPhase; ++i) {
-            m_CoMMessages.push_back(std::make_shared<controller_msgs::msg::CenterOfMassTrajectoryMessage>());
-        }
-
-        if (msg->include_com_messages) {
-            m_respondMessage->com_messages.resize(m_CoMMessages.size());
-        } else {
-            m_respondMessage->com_messages.clear();
-        }
-
-    } else {
-        m_CoMMessagePublisher = nullptr;
-        m_respondMessage->com_messages.clear();
+    if (!processCoMMessagesSettings(msg, settings)) {
+        return;
     }
 
-    if (msg->send_footstep_messages || msg->include_footstep_messages) {
+    if (!processPelvisHeightMessagesSettings(msg, settings)) {
+        return;
+    }
 
-        if (m_phases.size() < 2) {
-            sendErrorMessage(Errors::PARAMETERS_ERROR,
-                             "Cannot send feet message if the phases are less than 2.");
-            return;
-        }
-
-        if (m_phases.begin()->getPhaseType() == StepUpPlanner::PhaseType::FLYING) {
-            sendErrorMessage(Errors::PARAMETERS_ERROR,
-                             "Cannot send feet message if the first phase is a FLYING phase.");
-            return;
-        }
-
-        for (size_t i = 0; i < m_phases.size(); ++i) {
-
-            if (m_phases[i].getPhaseType() == StepUpPlanner::PhaseType::FLYING) {
-                sendErrorMessage(Errors::PARAMETERS_ERROR,
-                                 "The FLYING phase is not supported when generating feet messages.");
-                return;
-            }
-
-            if (i > 0 && m_phases[i].getPhaseType() == m_phases[i-1].getPhaseType()) {
-                sendErrorMessage(Errors::PARAMETERS_ERROR,
-                                 "Cannot send feet message if two consecutive phases are equal.");
-                return;
-            }
-        }
-
-        if (msg->send_footstep_messages) {
-            m_feetMessagePublisher = this->create_publisher<controller_msgs::msg::FootstepDataListMessage>(msg->footstep_messages_topic);
-        } else {
-            m_feetMessagePublisher = nullptr;
-        }
-
-        m_feetMessage = std::make_shared<controller_msgs::msg::FootstepDataListMessage>();
-
-        bool leftWasSwinging  = m_phases.begin()->getPhaseType() == StepUpPlanner::PhaseType::SINGLE_SUPPORT_RIGHT;
-        bool rightWasSwinging = m_phases.begin()->getPhaseType() == StepUpPlanner::PhaseType::SINGLE_SUPPORT_LEFT;
-        size_t numberOfSteps = 0;
-
-        for (size_t i = 1; i < m_phases.size(); ++i) {
-            bool leftIsSwinging  = m_phases[i].getPhaseType() == StepUpPlanner::PhaseType::SINGLE_SUPPORT_RIGHT;
-            bool rightIsSwinging = m_phases[i].getPhaseType() == StepUpPlanner::PhaseType::SINGLE_SUPPORT_LEFT;
-
-            if (leftWasSwinging && !leftIsSwinging) {
-                numberOfSteps++;
-            }
-
-            if (rightWasSwinging && !rightIsSwinging) {
-                numberOfSteps++;
-            }
-
-            leftWasSwinging = leftIsSwinging;
-            rightWasSwinging = rightIsSwinging;
-        }
-
-        if (numberOfSteps == 0) {
-            sendErrorMessage(Errors::PARAMETERS_ERROR,
-                             "No footstep message can be sent given the desired walking phases.");
-            return;
-        }
-
-        controller_msgs::msg::FootstepDataMessage templateStep;
-        templateStep.transfer_duration = 0.0;
-        m_feetMessage->footstep_data_list.resize(numberOfSteps, templateStep); //Initializing to zero all the transfer times
-
-        if (msg->include_footstep_messages) {
-            m_respondMessage->foostep_messages.resize(1);
-        } else {
-            m_respondMessage->foostep_messages.clear();
-        }
-
-    } else {
-        m_feetMessagePublisher = nullptr;
-        m_respondMessage->foostep_messages.clear();
+    if (!processFootStepMessagesSettings(msg)) {
+        return;
     }
 
     RCLCPP_INFO(this->get_logger(), "[processParameters] Parameters set correctly.");
@@ -451,9 +518,9 @@ void StepUpPlanner::Responder::sendCenterOfMassTrajectoryMessages()
             size_t messageIndex = p * m_CoMMessagesPerPhase + m;
             size_t messageID = messageIndex * 10 + 1;
 
-
             auto& euclideanTrajectory = m_CoMMessages[messageIndex]->euclidean_trajectory;
 
+            m_CoMMessages[messageIndex]->sequence_id = static_cast<unsigned int>(messageID);
             euclideanTrajectory.queueing_properties.sequence_id = static_cast<unsigned int>(messageID);
             euclideanTrajectory.queueing_properties.message_id = static_cast<long>(messageID);
             euclideanTrajectory.sequence_id = static_cast<unsigned int>(messageID);
@@ -493,6 +560,81 @@ void StepUpPlanner::Responder::sendCenterOfMassTrajectoryMessages()
 
             if (m_respondMessage->com_messages.size()) {
                 m_respondMessage->com_messages[messageIndex] = *m_CoMMessages[messageIndex];
+            }
+        }
+        assert(pointIndex == phaseLength);
+    }
+}
+
+void StepUpPlanner::Responder::sendPelvisHeightTrajectoryMessages()
+{
+    if (!m_pelvisMessagePublisher && !m_respondMessage->pelvis_height_messages.size()) {
+        return;
+    }
+
+    double time = 0.0;
+    size_t previousMessageID = 0;
+    for (size_t p = 0; p < m_phases.size(); ++p) {
+        size_t phaseLength = m_phases[p].states().size();
+        double dT = static_cast<double>(m_phases[p].duration()) / phaseLength;
+        size_t pointIndex = 0;
+
+        if (!p) {
+            time = 0;
+        } else {
+            time = dT;
+        }
+
+        for (size_t m = 0; m < m_pelvisMessagesPerPhase; ++m) {
+            size_t messagesElements;
+            if (m == m_pelvisMessagesPerPhase - 1) {
+                messagesElements = phaseLength - (m_pelvisMessagesPerPhase - 1) * phaseLength / m_pelvisMessagesPerPhase; //account for roundings
+            } else {
+                messagesElements = phaseLength / m_pelvisMessagesPerPhase;
+            }
+
+            size_t messageIndex = p * m_pelvisMessagesPerPhase + m;
+            size_t messageID = messageIndex * 10 + 2;
+
+            auto& euclideanTrajectory = m_pelvisMessages[messageIndex]->euclidean_trajectory;
+
+            m_pelvisMessages[messageIndex]->sequence_id = static_cast<unsigned int>(messageID);
+            m_pelvisMessages[messageIndex]->enable_user_pelvis_control = true;
+            m_pelvisMessages[messageIndex]->enable_user_pelvis_control_during_walking = true;
+            euclideanTrajectory.queueing_properties.sequence_id = static_cast<unsigned int>(messageID);
+            euclideanTrajectory.queueing_properties.message_id = static_cast<long>(messageID);
+            euclideanTrajectory.sequence_id = static_cast<unsigned int>(messageID);
+
+            if (messageIndex == 0) {
+                euclideanTrajectory.queueing_properties.set__execution_mode(
+                    euclideanTrajectory.queueing_properties.EXECUTION_MODE_OVERRIDE);
+            } else {
+                euclideanTrajectory.queueing_properties.set__execution_mode(euclideanTrajectory.queueing_properties.EXECUTION_MODE_QUEUE);
+                euclideanTrajectory.queueing_properties.set__previous_message_id(static_cast<long>(previousMessageID));
+            }
+
+            previousMessageID = messageID;
+
+            euclideanTrajectory.taskspace_trajectory_points.resize(messagesElements);
+
+            for (size_t i = 0; i < messagesElements; ++i) {
+                auto& point = euclideanTrajectory.taskspace_trajectory_points[i];
+                point.time = time;
+                point.position.z = m_phases[p].states()[pointIndex].position(2) + m_pelvisHeightDelta;
+                point.linear_velocity.z = m_phases[p].states()[pointIndex].velocity(2);
+
+                time += dT;
+                pointIndex++;
+            }
+
+            time = dT; //The time for each message is relative to the previous queued message.
+
+            if (m_pelvisMessagePublisher) {
+                m_pelvisMessagePublisher->publish(m_pelvisMessages[messageIndex]);
+            }
+
+            if (m_respondMessage->pelvis_height_messages.size()) {
+                m_respondMessage->pelvis_height_messages[messageIndex] = *m_pelvisMessages[messageIndex];
             }
         }
         assert(pointIndex == phaseLength);
@@ -618,6 +760,7 @@ StepUpPlanner::Responder::Responder()
         STEPUPPLANNER_PARAMETERS_TOPIC, std::bind(&StepUpPlanner::Responder::processParameters, this, _1));
 
     m_CoMMessagePublisher = nullptr;
+    m_pelvisMessagePublisher = nullptr;
     m_feetMessagePublisher = nullptr;
 }
 

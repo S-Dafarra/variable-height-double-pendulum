@@ -70,7 +70,16 @@ public:
 
                 messageReceived = true;
 
+                ASSERT_IS_TRUE(message->com_messages.size() == 5);
+                ASSERT_IS_TRUE(message->pelvis_height_messages.size() == 5);
+                ASSERT_IS_TRUE(message->foostep_messages.size() == 1);
+
+
                 for (size_t i = 0; i < message->com_messages.size(); ++i) {
+                    ASSERT_IS_TRUE(message->com_messages[i].euclidean_trajectory.taskspace_trajectory_points.size());
+                }
+
+                for (size_t i = 0; i < message->pelvis_height_messages.size(); ++i) {
                     ASSERT_IS_TRUE(message->com_messages[i].euclidean_trajectory.taskspace_trajectory_points.size());
                 }
 
@@ -112,6 +121,32 @@ private:
 };
 CoMSubscriber::~CoMSubscriber(){}
 
+class PelvisHeightSubscriber : public rclcpp::Node
+{
+public:
+    PelvisHeightSubscriber(const std::string& topicName)
+        : Node("pelvis_height_subscriber")
+    {
+        m_subscription = this->create_subscription<controller_msgs::msg::PelvisHeightTrajectoryMessage>(
+            topicName, [this](controller_msgs::msg::PelvisHeightTrajectoryMessage::UniquePtr message) {
+                std::ostringstream asString;
+                asString << "Received Pelvis message (ID " << message->euclidean_trajectory.queueing_properties.message_id <<")" << std::endl;
+                ASSERT_IS_TRUE(message->euclidean_trajectory.taskspace_trajectory_points.size());
+
+                messagesReceived++;
+
+                RCLCPP_INFO(this->get_logger(), asString.str());
+            });
+    }
+    ~PelvisHeightSubscriber();
+
+    size_t messagesReceived = 0;
+
+private:
+    rclcpp::Subscription<controller_msgs::msg::PelvisHeightTrajectoryMessage>::SharedPtr m_subscription;
+};
+PelvisHeightSubscriber::~PelvisHeightSubscriber(){}
+
 class FootstepsSubscriber : public rclcpp::Node
 {
 public:
@@ -139,6 +174,7 @@ FootstepsSubscriber::~FootstepsSubscriber(){}
 
 controller_msgs::msg::StepUpPlannerParametersMessage::SharedPtr fillParametersMessage(unsigned int id,
                                                                                       const std::string& comMessageTopic,
+                                                                                      const std::string& pelvisMessageTopic,
                                                                                       const std::string& feetMessageTopic) {
     controller_msgs::msg::StepUpPlannerParametersMessage::SharedPtr msg =
         std::make_shared<controller_msgs::msg::StepUpPlannerParametersMessage>();
@@ -220,6 +256,12 @@ controller_msgs::msg::StepUpPlannerParametersMessage::SharedPtr fillParametersMe
     msg->com_messages_topic = comMessageTopic;
     msg->max_com_message_length = 50;
     msg->include_com_messages = true;
+
+    msg->send_pelvis_height_messages = true;
+    msg->pelvis_height_messages_topic = pelvisMessageTopic;
+    msg->max_pelvis_height_message_length = 50;
+    msg->include_pelvis_height_messages = true;
+    msg->pelvis_height_delta = -0.25;
 
     msg->send_footstep_messages = true;
     msg->footstep_messages_topic = feetMessageTopic;
@@ -331,9 +373,11 @@ int main(int argc, char * argv[])
     auto respondSubscriber = std::make_shared<RespondSubscriber>();
 
     std::string comTopic = "/us/ihmc/CoMtest";
+    std::string pelvisTopic = "/us/ihmc/Pelvistest";
     std::string feetTopic = "/us/ihmc/FeetTest";
 
     auto comSubscriber = std::make_shared<CoMSubscriber>(comTopic);
+    auto pelvisSubscriber = std::make_shared<PelvisHeightSubscriber>(pelvisTopic);
     auto footStepsSubscriber = std::make_shared<FootstepsSubscriber>(feetTopic);
 
     auto parametersPublisherNode = rclcpp::Node::make_shared("parameters_publisher");
@@ -344,7 +388,7 @@ int main(int argc, char * argv[])
     auto requestPublisher = parametersPublisherNode->create_publisher<controller_msgs::msg::StepUpPlannerRequestMessage>
                             (STEPUPPLANNER_REQUEST_TOPIC);
 
-    auto parametersMessage = fillParametersMessage(1, comTopic, feetTopic);
+    auto parametersMessage = fillParametersMessage(1, comTopic, pelvisTopic, feetTopic);
     loop_rate.sleep(); //This sleep is necessary to make sure that the nodes are registered
     parametersPublisher->publish(parametersMessage);
 
@@ -370,7 +414,10 @@ int main(int argc, char * argv[])
     i = 0;
     respondSubscriber->messageReceived = false;
 
-    while (!((respondSubscriber->messageReceived) && (comSubscriber->messagesReceived == 5) && (footStepsSubscriber->messageReceived))
+    while (!((respondSubscriber->messageReceived) &&
+             (comSubscriber->messagesReceived == 5) &&
+             (pelvisSubscriber->messagesReceived == 5) &&
+             (footStepsSubscriber->messageReceived))
            && (i < 100)) {
         std::cout << "Loop " << i << std::endl;
         rclcpp::spin_some(requestPublisherNode);
@@ -378,6 +425,7 @@ int main(int argc, char * argv[])
         rclcpp::spin_some(errorSubscriber);
         rclcpp::spin_some(respondSubscriber);
         rclcpp::spin_some(comSubscriber);
+        rclcpp::spin_some(pelvisSubscriber);
         rclcpp::spin_some(footStepsSubscriber);
         ++i;
     }
