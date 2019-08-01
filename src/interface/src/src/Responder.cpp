@@ -64,9 +64,9 @@ bool StepUpPlanner::Responder::prepareSolver(const controller_msgs::msg::StepUpP
 
 void StepUpPlanner::Responder::respond(const controller_msgs::msg::StepUpPlannerRequestMessage::SharedPtr msg)
 {
-    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-
     m_plotter.closeAll();
+
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
     StepUpPlanner::State initialState;
     StepUpPlanner::References references;
