@@ -1,6 +1,7 @@
 #include <Responder.h>
 #include <cmath>
 #include <cassert>
+#include <chrono>
 
 using std::placeholders::_1;
 
@@ -63,6 +64,7 @@ bool StepUpPlanner::Responder::prepareSolver(const controller_msgs::msg::StepUpP
 
 void StepUpPlanner::Responder::respond(const controller_msgs::msg::StepUpPlannerRequestMessage::SharedPtr msg)
 {
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
     StepUpPlanner::State initialState;
     StepUpPlanner::References references;
@@ -89,6 +91,10 @@ void StepUpPlanner::Responder::respond(const controller_msgs::msg::StepUpPlanner
     sendFootStepDataListMessage();
 
     m_respondPublisher->publish(m_respondMessage);
+
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    std::string duration = std::to_string((std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count())/1000.0);
+    RCLCPP_INFO(this->get_logger(), "[processParameters] Respond published (" + duration + "[s]).");
 }
 
 bool StepUpPlanner::Responder::processPhaseSettings(const controller_msgs::msg::StepUpPlannerParametersMessage::SharedPtr msg)
@@ -384,6 +390,7 @@ bool StepUpPlanner::Responder::processPlannerSettings(const controller_msgs::msg
 
 void StepUpPlanner::Responder::processParameters(const controller_msgs::msg::StepUpPlannerParametersMessage::SharedPtr msg)
 {
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     RCLCPP_INFO(this->get_logger(), "[processParameters] Parameters received");
 
     if (!processPhaseSettings(msg)) {
@@ -415,10 +422,10 @@ void StepUpPlanner::Responder::processParameters(const controller_msgs::msg::Ste
         return;
     }
 
-    RCLCPP_INFO(this->get_logger(), "[processParameters] Parameters set correctly.");
-
     ackReceivedParameters(msg->sequence_id);
-
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    std::string duration = std::to_string((std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count())/1000.0);
+    RCLCPP_INFO(this->get_logger(), "[processParameters] Parameters set correctly (" + duration + "[s]).");
 }
 
 void StepUpPlanner::Responder::sendErrorMessage(StepUpPlanner::Responder::Errors errorType, const std::string &errorMessage)
