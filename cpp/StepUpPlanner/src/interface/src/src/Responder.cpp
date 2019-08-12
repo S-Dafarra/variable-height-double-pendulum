@@ -170,6 +170,11 @@ bool StepUpPlanner::Responder::processCoMMessagesSettings(const controller_msgs:
     if (msg->send_com_messages || msg->include_com_messages) {
 
         if (msg->send_com_messages) {
+            if (msg->com_messages_topic.empty()) {
+                sendErrorMessage(Errors::PARAMETERS_ERROR,
+                                 "The com_messages_topic is empty.");
+                return false;
+            }
             m_CoMMessagePublisher = this->create_publisher<controller_msgs::msg::CenterOfMassTrajectoryMessage>(msg->com_messages_topic);
         } else {
             m_CoMMessagePublisher = nullptr;
@@ -209,6 +214,11 @@ bool StepUpPlanner::Responder::processPelvisHeightMessagesSettings(
     if (msg->send_pelvis_height_messages || msg->include_pelvis_height_messages) {
 
         if (msg->send_pelvis_height_messages) {
+            if (msg->pelvis_height_messages_topic.empty()) {
+                sendErrorMessage(Errors::PARAMETERS_ERROR,
+                                 "The pelvis_height_messages_topic is empty.");
+                return false;
+            }
             m_pelvisMessagePublisher =
                 this->create_publisher<controller_msgs::msg::PelvisHeightTrajectoryMessage>(msg->pelvis_height_messages_topic);
         } else {
@@ -278,6 +288,11 @@ bool StepUpPlanner::Responder::processFootStepMessagesSettings(const controller_
         }
 
         if (msg->send_footstep_messages) {
+            if (msg->footstep_messages_topic.empty()) {
+                sendErrorMessage(Errors::PARAMETERS_ERROR,
+                                 "The footstep_messages_topic is empty.");
+                return false;
+            }
             m_feetMessagePublisher = this->create_publisher<controller_msgs::msg::FootstepDataListMessage>(msg->footstep_messages_topic);
         } else {
             m_feetMessagePublisher = nullptr;
