@@ -577,6 +577,7 @@ void StepUpPlanner::Responder::sendCenterOfMassTrajectoryMessages()
             time = dT; //The time for each message is relative to the previous queued message.
 
             if (m_CoMMessagePublisher) {
+                m_CoMMessages[messageIndex]->euclidean_trajectory.queueing_properties.execution_delay_time = messageIndex * 1e-8;
                 m_CoMMessagePublisher->publish(m_CoMMessages[messageIndex]);
             }
 
@@ -652,6 +653,7 @@ void StepUpPlanner::Responder::sendPelvisHeightTrajectoryMessages()
             time = dT; //The time for each message is relative to the previous queued message.
 
             if (m_pelvisMessagePublisher) {
+                m_pelvisMessages[messageIndex]->euclidean_trajectory.queueing_properties.execution_delay_time = messageIndex * 1e-8;
                 m_pelvisMessagePublisher->publish(m_pelvisMessages[messageIndex]);
             }
 
