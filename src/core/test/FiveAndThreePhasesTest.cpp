@@ -53,7 +53,7 @@ int main() {
     settings.phaseLength() = 30;
     settings.solverVerbosity() = 1;
     settings.setMaximumLegLength(1.2);
-    settings.setIpoptLinearSolver("ma27");
+    settings.setIpoptLinearSolver("mumps");
     settings.setFinalStateAnticipation(0.3);
     settings.setStaticFrictionCoefficient(0.5);
     settings.setTorsionalFrictionCoefficient(0.1);
