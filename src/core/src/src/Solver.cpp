@@ -45,24 +45,28 @@ void StepUpPlanner::Solver::createFeetConstraintsFunction(const std::string &nam
 
     casadi::Function copConstraintsFcn = step.getCoPConstraintsFunction();
 
-    double legLength = m_settings.getMaximMaximumLegLength();
+    double maxLegLength = m_settings.getMaximumLegLength();
+    double minLegLength = m_settings.getMinimumLegLength();
     casadi::MX legLengthExpression = casadi::MX::mtimes((currentPosition - footLocation).T(), (currentPosition - footLocation));
 
     casadi::MX multiplierPositivityExpression = -u;
 
     if (copConstraintsFcn.is_null()) {
 
-        outputBounds = casadi::DM::vertcat({frictionBounds, 0, legLength * legLength});
+        outputBounds = casadi::DM::vertcat({frictionBounds, 0, maxLegLength * maxLegLength, -minLegLength * minLegLength});
 
         outputFunction = casadi::Function(name, {state, footControl, footLocation}, {frictionExpressions,
-                                                                                     multiplierPositivityExpression, legLengthExpression});
+                                                                                     multiplierPositivityExpression,
+                                                                                     legLengthExpression,
+                                                                                     -legLengthExpression});
 
     } else {
         casadi::MX copConstraintsExpressions = casadi::MX::vertcat(copConstraintsFcn(footCoP));
-        outputBounds = casadi::DM::vertcat({frictionBounds, step.getCoPBounds(), 0, legLength * legLength});
+        outputBounds = casadi::DM::vertcat({frictionBounds, step.getCoPBounds(), 0,
+                                            maxLegLength * maxLegLength, -minLegLength * minLegLength});
         outputFunction = casadi::Function(name, {state, footControl, footLocation, footOrientation},
                                           {frictionExpressions, copConstraintsExpressions,
-                                           multiplierPositivityExpression, legLengthExpression});
+                                           multiplierPositivityExpression, legLengthExpression, -legLengthExpression});
     }
 }
 

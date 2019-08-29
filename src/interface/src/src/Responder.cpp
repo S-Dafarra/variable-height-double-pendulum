@@ -64,6 +64,8 @@ bool StepUpPlanner::Responder::prepareSolver(const controller_msgs::msg::StepUpP
 
 void StepUpPlanner::Responder::respond(const controller_msgs::msg::StepUpPlannerRequestMessage::SharedPtr msg)
 {
+    RCLCPP_INFO(this->get_logger(), "[respond] Request received. Start computations (it may take a while)...");
+
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
     StepUpPlanner::State initialState;
@@ -94,7 +96,7 @@ void StepUpPlanner::Responder::respond(const controller_msgs::msg::StepUpPlanner
 
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::string duration = std::to_string((std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count())/1000.0);
-    RCLCPP_INFO(this->get_logger(), "[processParameters] Respond published (" + duration + "[s]).");
+    RCLCPP_INFO(this->get_logger(), "[respond] Respond published (" + duration + "[s]).");
 }
 
 bool StepUpPlanner::Responder::processPhaseSettings(const controller_msgs::msg::StepUpPlannerParametersMessage::SharedPtr msg)
@@ -350,10 +352,10 @@ bool StepUpPlanner::Responder::processPlannerSettings(const controller_msgs::msg
     settings.phaseLength() = msg->phase_length;
     settings.solverVerbosity() = msg->solver_verbosity;
 
-    bool ok = settings.setMaximumLegLength(msg->max_leg_length);
+    bool ok = settings.setLegLengthSettings(msg->min_leg_length, msg->max_leg_length);
     if (!ok) {
         sendErrorMessage(Errors::PARAMETERS_ERROR,
-                         "The max_leg_length is supposed to be a positive number");
+                         "Error while setting the leg length parameters.");
         return false;
     }
 

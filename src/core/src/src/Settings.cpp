@@ -5,6 +5,7 @@
 
 StepUpPlanner::Settings::Settings()
     : m_maximumLegLength(1.5)
+      , m_minimumLegLength(0.0)
       , m_staticFrictionCoefficient(0.5)
       , m_torsionalFrictionCoefficient(0.03)
       , m_finalStateAnticipation(0.3)
@@ -22,14 +23,65 @@ bool StepUpPlanner::Settings::setMaximumLegLength(double maxLength)
         return false;
     }
 
+    if (maxLength < m_minimumLegLength) {
+        std::cerr << "[StepUpPlanner::Settings::setMaximumLegLength] The maxLength is supposed to be greater than the minimum leg length." << std::endl;
+        return false;
+    }
+
+
     m_maximumLegLength = maxLength;
 
     return true;
 }
 
-double StepUpPlanner::Settings::getMaximMaximumLegLength() const
+double StepUpPlanner::Settings::getMaximumLegLength() const
 {
     return m_maximumLegLength;
+}
+
+bool StepUpPlanner::Settings::setMinimumLegLength(double minLength)
+{
+    if (minLength < 0) {
+        std::cerr << "[StepUpPlanner::Settings::setMinimumLegLength] The minLength is supposed to be a non-negative number." << std::endl;
+        return false;
+    }
+
+    if (minLength > m_maximumLegLength) {
+        std::cerr << "[StepUpPlanner::Settings::setMinimumLegLength] The minLength is supposed to be lower than the maximum leg length." << std::endl;
+        return false;
+    }
+
+    m_minimumLegLength = minLength;
+
+    return true;
+}
+
+double StepUpPlanner::Settings::getMinimumLegLength() const
+{
+    return m_minimumLegLength;
+}
+
+bool StepUpPlanner::Settings::setLegLengthSettings(double minLength, double maxLength)
+{
+    if (maxLength <= 0) {
+        std::cerr << "[StepUpPlanner::Settings::setLegLengthSettings] The maxLength is supposed to be a positive number." << std::endl;
+        return false;
+    }
+
+    if (minLength < 0) {
+        std::cerr << "[StepUpPlanner::Settings::setLegLengthSettings] The minLength is supposed to be a non-negative number." << std::endl;
+        return false;
+    }
+
+    if (maxLength < minLength) {
+        std::cerr << "[StepUpPlanner::Settings::setLegLengthSettings] The maxLength is supposed to be greater than minLength." << std::endl;
+        return false;
+    }
+
+    m_maximumLegLength = maxLength;
+    m_minimumLegLength = minLength;
+
+    return true;
 }
 
 bool StepUpPlanner::Settings::setStaticFrictionCoefficient(double staticFrictionCoeff)
