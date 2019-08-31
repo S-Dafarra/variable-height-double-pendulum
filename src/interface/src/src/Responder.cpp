@@ -127,7 +127,7 @@ bool StepUpPlanner::Responder::processPhaseSettings(const controller_msgs::msg::
                 vertices[vertex].y = leftParameters.foot_vertices[vertex].y;
             }
 
-            bool ok = leftStep.setVertices(vertices, leftParameters.scale);
+            bool ok = leftStep.setVertices(vertices, leftParameters.scale, leftParameters.center_offset.x, leftParameters.center_offset.y);
 
             if (!ok) {
                 sendErrorMessage(Errors::PARAMETERS_ERROR,
@@ -149,7 +149,8 @@ bool StepUpPlanner::Responder::processPhaseSettings(const controller_msgs::msg::
                 vertices[vertex].y = rightParameters.foot_vertices[vertex].y;
             }
 
-            bool ok = rightStep.setVertices(vertices, rightParameters.scale);
+            bool ok = rightStep.setVertices(vertices, rightParameters.scale,
+                                            rightParameters.center_offset.x, rightParameters.center_offset.y);
 
             if (!ok) {
                 sendErrorMessage(Errors::PARAMETERS_ERROR,
