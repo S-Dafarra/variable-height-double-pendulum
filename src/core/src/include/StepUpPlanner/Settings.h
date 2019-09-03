@@ -12,6 +12,7 @@ class StepUpPlanner::Settings {
 
     double m_maximumLegLength;
     double m_minimumLegLength;
+    double m_minimumCoMHeight;
     double m_staticFrictionCoefficient;
     double m_torsionalFrictionCoefficient;
 
@@ -39,6 +40,10 @@ public:
     double getMinimumLegLength() const;
 
     bool setLegLengthSettings(double minLength, double maxLength);
+
+    double& minimumCoMHeight();
+
+    double minimumCoMHeight() const;
 
     bool setStaticFrictionCoefficient(double staticFrictionCoeff);
 

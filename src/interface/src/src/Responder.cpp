@@ -360,6 +360,8 @@ bool StepUpPlanner::Responder::processPlannerSettings(const controller_msgs::msg
         return false;
     }
 
+    settings.minimumCoMHeight() = msg->min_com_height;
+
     if (msg->ipopt_linear_solver.size()) {
         ok = settings.setIpoptLinearSolver(msg->ipopt_linear_solver);
         if (!ok) {

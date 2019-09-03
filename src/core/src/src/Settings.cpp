@@ -6,6 +6,7 @@
 StepUpPlanner::Settings::Settings()
     : m_maximumLegLength(1.5)
       , m_minimumLegLength(0.0)
+      , m_minimumCoMHeight(0.0)
       , m_staticFrictionCoefficient(0.5)
       , m_torsionalFrictionCoefficient(0.03)
       , m_finalStateAnticipation(0.3)
@@ -82,6 +83,16 @@ bool StepUpPlanner::Settings::setLegLengthSettings(double minLength, double maxL
     m_minimumLegLength = minLength;
 
     return true;
+}
+
+double &StepUpPlanner::Settings::minimumCoMHeight()
+{
+    return m_minimumCoMHeight;
+}
+
+double StepUpPlanner::Settings::minimumCoMHeight() const
+{
+    return m_minimumCoMHeight;
 }
 
 bool StepUpPlanner::Settings::setStaticFrictionCoefficient(double staticFrictionCoeff)

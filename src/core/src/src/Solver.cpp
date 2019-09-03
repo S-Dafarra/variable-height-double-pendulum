@@ -149,6 +149,7 @@ bool StepUpPlanner::Solver::fillPhaseDataVector(const std::vector<Phase> &phases
         m_phases[i].feetOrientationParameter.right = m_opti.parameter(3, 3);
         m_phases[i].minDurationParameter = m_opti.parameter();
         m_phases[i].maxDurationParameter = m_opti.parameter();
+        m_phases[i].feetMaxHeightParameter = m_opti.parameter();
 
         m_phases[i].phase.states().resize(m_settings.phaseLength());
         m_phases[i].phase.controls().resize(m_settings.phaseLength());
@@ -253,6 +254,10 @@ void StepUpPlanner::Solver::setupOpti()
                 m_opti.subject_to(m_U(Sl(3,6), k) == casadi::MX::zeros(3,1));
             }
 
+            if (leftIsActive || rightIsActive) {
+                m_opti.subject_to((m_X(2, k + 1) - m_phases[castedPhase].feetMaxHeightParameter) >= m_settings.minimumCoMHeight());
+            }
+
             m_opti.subject_to(casadi::MX::vertcat(accelerationConstraint({m_X(Sl(), k + 1), m_U(Sl(), k), m_A(Sl(), k),
                                                                           leftPosition, leftRotation,
                                                                           rightPosition, rightRotation})) == casadi::DM::zeros(3,1));
@@ -350,6 +355,17 @@ void StepUpPlanner::Solver::setParametersValue(const StepUpPlanner::State &initi
         m_opti.set_value(m_phases[i].minDurationParameter, m_phases[i].phase.minDuration());
         m_opti.set_value(m_phases[i].maxDurationParameter, m_phases[i].phase.maxDuration());
         m_opti.set_value(m_referenceTimings(i), m_phases[i].phase.desiredDuration());
+
+        if (m_phases[i].isActive.left && m_phases[i].isActive.right) {
+            m_opti.set_value(m_phases[i].feetMaxHeightParameter,
+                             std::max(m_phases[i].phase.leftPosition(2), m_phases[i].phase.rightPosition(2)));
+        } else if (m_phases[i].isActive.left) {
+            m_opti.set_value(m_phases[i].feetMaxHeightParameter, m_phases[i].phase.leftPosition(2));
+        } else if (m_phases[i].isActive.right) {
+            m_opti.set_value(m_phases[i].feetMaxHeightParameter, m_phases[i].phase.rightPosition(2));
+        } else {
+            m_opti.set_value(m_phases[i].feetMaxHeightParameter, 0.0);
+        }
     }
 }
 
