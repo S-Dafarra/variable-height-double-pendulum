@@ -2,6 +2,20 @@
 
 This repo contains the code used to generate the trajectories for large step-ups. It consists of a library which exploits [``CasADi``](https://web.casadi.org/) to solve an optimal control problem, plus a [``ROS2``](https://index.ros.org/doc/ros2/) node to communicate with the robot.
 
+## Citing
+This code is related to the paper "Non-Linear Trajectory Optimization for Large Step-Ups: Application to the Humanoid Robot Atlas".
+Paper: https://ieeexplore.ieee.org/document/9341587
+Arxiv: https://arxiv.org/abs/2004.12083
+
+To cite this work, please add the following to your publication
+```
+S. Dafarra, S. Bertrand, R. J. Griffin, G. Metta, D. Pucci and J. Pratt, "Non-Linear Trajectory Optimization for Large Step-Ups: Application to the Humanoid Robot Atlas," 2020 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), Las Vegas, NV, USA, 2020, pp. 3884-3891, doi: 10.1109/IROS45743.2020.9341587.
+```
+Bibtex:
+```
+@INPROCEEDINGS{9341587,  author={S. {Dafarra} and S. {Bertrand} and R. J. {Griffin} and G. {Metta} and D. {Pucci} and J. {Pratt}},  booktitle={2020 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)},   title={Non-Linear Trajectory Optimization for Large Step-Ups: Application to the Humanoid Robot Atlas},   year={2020},  volume={},  number={},  pages={3884-3891},  doi={10.1109/IROS45743.2020.9341587}}
+```
+
 ## Dependencies
 - [``ihmc-open-robotics-software``](https://bitbucket.ihmc.us/projects/LIBS/repos/ihmc-open-robotics-software/browse)
 - [``CasADi``](https://web.casadi.org/)
