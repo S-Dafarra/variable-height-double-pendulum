@@ -17,12 +17,14 @@ Bibtex:
 ```
 
 ## Dependencies
-- [``ihmc-open-robotics-software``](https://bitbucket.ihmc.us/projects/LIBS/repos/ihmc-open-robotics-software/browse)
 - [``CasADi``](https://web.casadi.org/)
-- [``ROS2``](https://index.ros.org/doc/ros2/) (Tested with Crystal Clemmys)
 - [``Ipopt``](https://github.com/coin-or/Ipopt)
 - [``cmake``](https://cmake.org/)
 - A C++ compiler
+
+If the CMake option ``BUILD_INTERFACE`` is ON (it is ON by default), you also need
+- [``ihmc-open-robotics-software``](https://bitbucket.ihmc.us/projects/LIBS/repos/ihmc-open-robotics-software/browse)
+- [``ROS2``](https://index.ros.org/doc/ros2/) (Tested with Crystal Clemmys)
 
 ## Linux Installation Instructions
 
